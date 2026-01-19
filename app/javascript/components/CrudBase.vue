@@ -425,7 +425,7 @@ export default {
 
     async deleteItem() {
       this.deleting = true
-      this.error = null // Limpa erro anterior
+      this.error = null
 
       try {
         const token = localStorage.getItem('token')
@@ -438,14 +438,10 @@ export default {
         this.closeModal()
         this.loadItems()
       } catch (err) {
-        console.log('Erro ao excluir:', err.response)
-        // Verifica se é um erro de violação de chave estrangeira
         if (err.response?.status === 409) {
-          console.log('Erro 409 detectado:', err.response.data)
           this.deleteError = err.response.data.error
           this.deleteErrorMessage = err.response.data.message
           this.relatedStays = err.response.data.related_stays || []
-          // Não fecha o modal, apenas exibe o erro dentro dele
         } else {
           this.error = err.response?.data?.error || 'Erro ao excluir'
           this.closeDeleteModal()

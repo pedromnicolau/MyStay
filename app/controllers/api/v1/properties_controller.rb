@@ -16,9 +16,7 @@ class Api::V1::PropertiesController < ApplicationController
     property = current_user.properties.build(property_payload)
 
     if property.save
-      attach_new_files_to(property)
-      assign_main_attachment_if_needed(property)
-      save_attachments_order(property)
+      process_attachments(property)
       render json: serialize_property(property), status: :created
     else
       render json: { errors: property.errors.full_messages }, status: :unprocessable_entity
@@ -27,10 +25,7 @@ class Api::V1::PropertiesController < ApplicationController
 
   def update
     if @property.update(property_payload)
-      attach_new_files
-      purge_removed_attachments
-      assign_main_attachment_if_needed
-      save_attachments_order
+      process_attachments(@property)
       render json: serialize_property(@property), status: :ok
     else
       render json: { errors: @property.errors.full_messages }, status: :unprocessable_entity
@@ -62,46 +57,42 @@ class Api::V1::PropertiesController < ApplicationController
   def property_payload
     permitted = property_params
     permitted = permitted.except(:remove_attachment_ids, :attachments)
-
-    unless Property.new.respond_to?(:main_attachment_id)
-      permitted = permitted.except(:main_attachment_id, :main_attachment_name)
-    end
-
+    permitted = permitted.except(:main_attachment_id, :main_attachment_name) unless Property.new.respond_to?(:main_attachment_id)
     permitted
   end
 
-  def attach_new_files
-    new_files = params.dig(:property, :attachments)
-    return if new_files.blank?
-
-    @property.attachments.attach(new_files)
+  def process_attachments(property)
+    attach_files(property)
+    purge_removed_attachments(property)
+    assign_main_attachment_if_needed(property)
+    save_attachments_order(property)
   end
 
-  def attach_new_files_to(property)
+  def attach_files(property)
     new_files = params.dig(:property, :attachments)
     return if new_files.blank?
-
     property.attachments.attach(new_files)
   end
 
-  def purge_removed_attachments
+  def purge_removed_attachments(property)
     ids = params.dig(:property, :remove_attachment_ids)
     return if ids.blank?
 
     Array(ids).each do |attachment_id|
-      attachment = @property.attachments.find_by(id: attachment_id)
+      attachment = property.attachments.find_by(id: attachment_id)
       attachment&.purge_later
     end
 
-    if @property.respond_to?(:main_attachment_id) && @property.main_attachment_id.present? && Array(ids).map(&:to_s).include?(@property.main_attachment_id.to_s)
-      @property.update_column(:main_attachment_id, nil)
+    if property.respond_to?(:main_attachment_id) && property.main_attachment_id.present? && Array(ids).map(&:to_s).include?(property.main_attachment_id.to_s)
+      property.update_column(:main_attachment_id, nil)
     end
   end
 
   def serialize_property(property)
-    property.as_json.merge(
-      attachments: attachments_payload(property)
-    )
+    serialized = property.as_json
+    serialized["attachments"] = attachments_payload(property)
+    serialized["attachments_order"] = property.attachments_order || [] if property.respond_to?(:attachments_order)
+    serialized
   end
 
   def attachments_payload(property)
@@ -120,24 +111,13 @@ class Api::V1::PropertiesController < ApplicationController
       }
     end
 
-    # Ordenar pela attachments_order se disponível
     if order.any?
-      # Criar hash para lookup rápido de posição
       position_map = order.each_with_index.to_h
-
-      # Separar pinned do resto
       pinned = attachments_list.select { |att| att[:is_main] }
       unpinned = attachments_list.reject { |att| att[:is_main] }
-
-      # Ordenar unpinned pela posição salva
-      unpinned.sort_by! do |att|
-        position_map[att[:id]] || Float::INFINITY
-      end
-
-      # Pinned sempre primeiro
+      unpinned.sort_by! { |att| position_map[att[:id]] || Float::INFINITY }
       pinned + unpinned
     else
-      # Fallback: pinned primeiro
       attachments_list.sort_by { |att| att[:is_main] ? 0 : 1 }
     end
   end
@@ -147,13 +127,12 @@ class Api::V1::PropertiesController < ApplicationController
     return unless property_record.respond_to?(:main_attachment_id)
 
     main_id = params.dig(:property, :main_attachment_id)
-    main_name = params.dig(:property, :main_attachment_name)
-
     if main_id.present?
       property_record.update_column(:main_attachment_id, main_id)
       return
     end
 
+    main_name = params.dig(:property, :main_attachment_name)
     return if main_name.blank?
 
     candidate = property_record.attachments.where("active_storage_blobs.filename = ?", main_name)
@@ -161,9 +140,7 @@ class Api::V1::PropertiesController < ApplicationController
       .order(created_at: :desc)
       .first
 
-    if candidate
-      property_record.update_column(:main_attachment_id, candidate.id)
-    end
+    property_record.update_column(:main_attachment_id, candidate.id) if candidate
   end
 
   def save_attachments_order(property_record = @property)
@@ -173,10 +150,8 @@ class Api::V1::PropertiesController < ApplicationController
     order = params.dig(:property, :attachments_order)
     return if order.blank?
 
-    # Limpar IDs inválidos (que foram removidos)
     valid_ids = property_record.attachments.pluck(:id)
     filtered_order = Array(order).select { |id| valid_ids.include?(id.to_i) }
-
     property_record.update_column(:attachments_order, filtered_order)
   end
 end

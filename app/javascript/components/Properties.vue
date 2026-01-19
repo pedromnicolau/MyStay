@@ -178,16 +178,6 @@
             <div v-if="existingAttachments(form).length || newAttachments(form).length" class="flex flex-wrap gap-1">
               <!-- Attachments existentes -->
               <template v-for="(attachment, existingIdx) in existingAttachments(form)" :key="`existing-${attachment.id}`">
-                <!-- Drop zone antes do attachment -->
-                <div
-                  v-if="existingIdx === 0"
-                  @dragover.prevent="dragOverDropZone($event, 'existing', existingIdx, 'before')"
-                  @drop.prevent="dropInZone($event, 'existing', existingIdx, 'before', form)"
-                  @dragleave="clearDropZone"
-                  class="w-3 h-28 transition-all"
-                  :class="dropZoneActive === `existing-${existingIdx}-before` ? 'bg-indigo-400 w-6 rounded-lg' : 'bg-transparent'"
-                ></div>
-
                 <!-- Attachment -->
                 <div
                   draggable="true"
@@ -196,23 +186,15 @@
                   @drop.prevent="dropAttachment($event, 'existing', existingIdx, form)"
                   @dragleave="dragOverIdx = null"
                   @dragend="endDragAttachment"
-                  class="relative w-28 h-28 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-move transition"
+                  class="relative w-28 h-28 rounded-lg overflow-hidden border-2 bg-gray-50 cursor-move transition"
                   :class="{ 
                     'opacity-50 bg-indigo-100 border-indigo-400': draggedAttachment.from === 'existing' && draggedAttachment.fromIdx === existingIdx,
-                    'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'existing' && dragOverIdx === existingIdx
+                    'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'existing' && dragOverIdx === existingIdx,
+                    'border-purple-500 ring-2 ring-purple-300': existingIdx === 0,
+                    'border-gray-200': existingIdx !== 0
                   }"
                   @click="openLightbox(existingIdx, form)"
                 >
-                  <button
-                    type="button"
-                    @click.stop="pinExistingAttachment(attachment, form)"
-                    class="absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer transition"
-                    :class="isPinnedExisting(attachment, form) ? 'bg-indigo-600 text-white font-semibold' : 'bg-white bg-opacity-80 text-gray-500 hover:text-indigo-600 hover:bg-opacity-100'"
-                    title="Definir como principal"
-                    draggable="false"
-                  >
-                    ★
-                  </button>
                   <button
                     type="button"
                     @click.stop="removeExistingAttachment(form, attachment)"
@@ -242,16 +224,6 @@
 
               <!-- Attachments novos -->
               <template v-for="(file, newIdx) in newAttachments(form)" :key="`new-${file.name}-${file.lastModified}`">
-                <!-- Drop zone antes (só se for o primeiro new e não há existing) -->
-                <div
-                  v-if="newIdx === 0 && existingAttachments(form).length === 0"
-                  @dragover.prevent="dragOverDropZone($event, 'new', newIdx, 'before')"
-                  @drop.prevent="dropInZone($event, 'new', newIdx, 'before', form)"
-                  @dragleave="clearDropZone"
-                  class="w-3 h-28 transition-all"
-                  :class="dropZoneActive === `new-${newIdx}-before` ? 'bg-indigo-400 w-6 rounded-lg' : 'bg-transparent'"
-                ></div>
-
                 <!-- Attachment -->
                 <div
                   draggable="true"
@@ -267,16 +239,6 @@
                   }"
                   @click="openLightbox(existingAttachments(form).length + newIdx, form)"
                 >
-                  <button
-                    type="button"
-                    @click.stop="pinNewAttachment(file, form)"
-                    class="absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer transition"
-                    :class="isPinnedNew(file, form) ? 'bg-indigo-600 text-white font-semibold' : 'bg-white bg-opacity-80 text-gray-500 hover:text-indigo-600 hover:bg-opacity-100'"
-                    title="Definir como principal"
-                    draggable="false"
-                  >
-                    ★
-                  </button>
                   <button
                     type="button"
                     @click.stop="removeNewAttachment(form, file)"
@@ -522,18 +484,21 @@ export default {
       handler(newAttachments) {
         if (!Array.isArray(newAttachments)) return
         
-        // Sincronizar main_attachment_id
-        const mainAttachment = newAttachments.find(att => att && att.is_main)
-        if (mainAttachment && mainAttachment.id) {
-          this.form.main_attachment_id = mainAttachment.id
-        }
-
         // Atualizar attachments_order com IDs dos anexos existentes
-        const attachmentIds = newAttachments
-          .filter(att => att && att.id)
+        // Nota: Mantemos a ordem atual de attachments_order se for válida
+        const existingAttachmentIds = newAttachments
+          .filter(att => att && att.id && !this.isFileAttachment(att))
           .map(att => att.id)
+
+        // Se não temos uma ordem salva, criar uma baseada na ordem atual
+        if (!this.form.attachments_order || !this.form.attachments_order.length) {
+          this.form.attachments_order = existingAttachmentIds
+        }
         
-        this.form.attachments_order = attachmentIds
+        // Sincronizar anexo principal (primeiro é sempre o principal)
+        this.$nextTick(() => {
+          this.syncMainAttachmentId()
+        })
       },
       deep: true
     }
@@ -544,14 +509,44 @@ export default {
       this.$parent.editItem(item)
       this.$nextTick(() => {
         this.syncMainAttachmentId()
+        this.syncAttachmentsOrder()
       })
     },
 
     syncMainAttachmentId() {
       if (!Array.isArray(this.form.attachments)) return
-      const mainAttachment = this.form.attachments.find(att => att && att.is_main)
-      if (mainAttachment && mainAttachment.id) {
-        this.form.main_attachment_id = mainAttachment.id
+      
+      // O primeiro anexo existente é sempre o principal
+      const firstExisting = this.form.attachments.find(att => att && att.id && !this.isFileAttachment(att))
+      if (firstExisting && firstExisting.id) {
+        this.form.main_attachment_id = firstExisting.id
+        this.form.main_attachment_name = ''
+      } else {
+        // Se não há anexos existentes, verificar se há novos
+        const firstNew = this.form.attachments.find(att => this.isFileAttachment(att))
+        if (firstNew) {
+          this.form.main_attachment_id = null
+          this.form.main_attachment_name = firstNew.name
+        }
+      }
+    },
+
+    isFileAttachment(item) {
+      return (typeof File !== 'undefined' && item instanceof File) ||
+        (typeof Blob !== 'undefined' && item instanceof Blob)
+    },
+
+    syncAttachmentsOrder() {
+      // Sincronizar attachments_order quando o modal é aberto
+      if (!Array.isArray(this.form.attachments)) return
+      
+      const existingIds = this.form.attachments
+        .filter(att => att && att.id && !this.isFileAttachment(att))
+        .map(att => att.id)
+      
+      // Se não temos uma ordem salva, usar a ordem atual
+      if (!this.form.attachments_order || !this.form.attachments_order.length) {
+        this.form.attachments_order = existingIds
       }
     },
 
@@ -578,6 +573,11 @@ export default {
         .map(file => this.decorateFileWithPreview(file))
       const current = Array.isArray(form.attachments) ? form.attachments : []
       form.attachments = [ ...current, ...selectedFiles ]
+      
+      // Sincronizar anexo principal após adicionar novos arquivos
+      this.$nextTick(() => {
+        this.syncMainAttachmentId()
+      })
     },
 
     isAllowedFile(file) {
@@ -597,10 +597,11 @@ export default {
       }
 
       form.attachments = (form.attachments || []).filter(item => item.id !== attachment.id)
-
-      if (this.isPinnedExisting(attachment, form)) {
-        form.main_attachment_id = null
-      }
+      
+      // Atualizar o anexo principal após remoção
+      this.$nextTick(() => {
+        this.syncMainAttachmentId()
+      })
     },
 
     removeNewAttachment(form, file) {
@@ -609,59 +610,34 @@ export default {
       }
 
       form.attachments = (form.attachments || []).filter(item => item !== file)
-
-      if (this.isPinnedNew(file, form)) {
-        form.main_attachment_name = ''
-      }
+      
+      // Atualizar o anexo principal após remoção
+      this.$nextTick(() => {
+        this.syncMainAttachmentId()
+      })
     },
 
     existingAttachments(form) {
-      return (form.attachments || [])
+      const items = (form.attachments || [])
         .filter(item => !this.isFileAttachment(item))
-        .sort((a, b) => this.sortAttachments(a, b, form))
+      
+      // Aplicar ordenação salva se disponível
+      const order = form.attachments_order || []
+      const orderMap = new Map(order.map((id, idx) => [id, idx]))
+      
+      // Ordenar pela ordem salva
+      items.sort((a, b) => {
+        const aPos = orderMap.has(a.id) ? orderMap.get(a.id) : Infinity
+        const bPos = orderMap.has(b.id) ? orderMap.get(b.id) : Infinity
+        return aPos - bPos
+      })
+      
+      return items
     },
 
     newAttachments(form) {
       return (form.attachments || [])
         .filter(item => this.isFileAttachment(item))
-        .sort((a, b) => this.sortAttachments(a, b, form))
-    },
-
-    sortAttachments(a, b, form) {
-      const aPinned = this.isPinned(a, form)
-      const bPinned = this.isPinned(b, form)
-      if (aPinned && !bPinned) return -1
-      if (!aPinned && bPinned) return 1
-      return 0
-    },
-
-    isFileAttachment(item) {
-      return (typeof File !== 'undefined' && item instanceof File) ||
-        (typeof Blob !== 'undefined' && item instanceof Blob)
-    },
-
-    isPinned(attachment, form) {
-      return this.isPinnedExisting(attachment, form) || this.isPinnedNew(attachment, form)
-    },
-
-    isPinnedExisting(attachment, form) {
-      return !!(form.main_attachment_id && attachment.id && String(form.main_attachment_id) === String(attachment.id))
-    },
-
-    isPinnedNew(file, form) {
-      if (!file || !this.isFileAttachment(file)) return false
-      if (!form.main_attachment_name) return false
-      return file.name === form.main_attachment_name
-    },
-
-    pinExistingAttachment(attachment, form) {
-      form.main_attachment_id = attachment.id
-      form.main_attachment_name = ''
-    },
-
-    pinNewAttachment(file, form) {
-      form.main_attachment_id = null
-      form.main_attachment_name = file.name
     },
 
     startDragAttachment(event, type, index, form) {
@@ -714,17 +690,23 @@ export default {
 
       const toRealIdx = targetItem ? allAttachments.indexOf(targetItem) : allAttachments.length
 
-      // Remover do índice antigo
-      const [removed] = allAttachments.splice(fromRealIdx, 1)
-      
-      // Inserir no novo índice (ajustado se necessário)
-      const insertIdx = fromRealIdx < toRealIdx ? toRealIdx - 1 : toRealIdx
-      allAttachments.splice(insertIdx, 0, removed)
+      // SWAP: Trocar posições dos dois anexos
+      const temp = allAttachments[fromRealIdx]
+      allAttachments[fromRealIdx] = allAttachments[toRealIdx]
+      allAttachments[toRealIdx] = temp
 
       // Forçar reatividade
       form.attachments = [...allAttachments]
 
-      // Salvar a ordem dos anexos
+      // Atualizar attachments_order com a nova ordem
+      this.updateAttachmentsOrder(form)
+      
+      // Sincronizar anexo principal (primeiro é sempre o principal)
+      this.$nextTick(() => {
+        this.syncMainAttachmentId()
+      })
+
+      // Salvar a ordem dos anexos se o property foi criado
       this.saveAttachmentsOrder(form)
 
       this.draggedAttachment.from = null
@@ -748,17 +730,24 @@ export default {
       this.dropZoneActive = null
     },
 
+    updateAttachmentsOrder(form) {
+      // Atualizar attachments_order com os IDs dos anexos existentes na ordem atual
+      const allAttachments = form.attachments || []
+      const attachmentIds = allAttachments
+        .filter(att => att && att.id)
+        .map(att => att.id)
+      
+      form.attachments_order = attachmentIds
+    },
+
     dropInZone(event, toType, toIdx, position, form) {
       const fromType = this.draggedAttachment.from
       const fromIdx = this.draggedAttachment.fromIdx
 
       if (fromType === null || fromIdx === null) return
 
-      // Calcular o índice real de inserção baseado na posição
-      let targetIdx = toIdx
-      if (position === 'after') {
-        targetIdx = toIdx + 1
-      }
+      // Sempre inserir após o anexo (position sempre será 'after')
+      const targetIdx = toIdx + 1
 
       // Trabalhar diretamente com form.attachments
       const allAttachments = form.attachments || []
@@ -802,7 +791,15 @@ export default {
       // Forçar reatividade
       form.attachments = [...allAttachments]
 
-      // Salvar a ordem dos anexos
+      // Atualizar attachments_order com a nova ordem
+      this.updateAttachmentsOrder(form)
+      
+      // Sincronizar anexo principal (primeiro é sempre o principal)
+      this.$nextTick(() => {
+        this.syncMainAttachmentId()
+      })
+
+      // Salvar a ordem dos anexos se o property foi criado
       this.saveAttachmentsOrder(form)
 
       this.draggedAttachment.from = null
@@ -815,9 +812,11 @@ export default {
       if (!this.$parent.editingItem || !this.$parent.editingItem.id) return
 
       try {
-        const allAttachments = form.attachments || []
-        const attachmentIds = allAttachments.map(att => att.id).filter(id => id)
+        // Usar a ordem salva em attachments_order que foi atualizada pelo updateAttachmentsOrder
+        const attachmentIds = form.attachments_order || []
         
+        if (!attachmentIds.length) return
+
         const payload = {
           property: {
             attachments_order: attachmentIds

@@ -67,12 +67,4 @@ class Api::V1::StaysController < ApplicationController
   def set_stay_with_associations
     @stay = current_user.stays.includes(:customer, :property).find(params[:id])
   end
-
-  def authenticate_user!
-    super
-  end
-
-  def current_user
-    @current_user
-  end
 end

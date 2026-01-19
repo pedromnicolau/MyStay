@@ -507,7 +507,7 @@ import QuickPersonModal from './QuickPersonModal.vue'
 import ConfirmationModal from './ConfirmationModal.vue'
 import SelectWithFilter from './SelectWithFilter.vue'
 import PersonSelect from './PersonSelect.vue'
-import { useInputMasks } from '../composables/useInputMasks.js'
+import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
 import { useApi } from '../composables/useApi.js'
 import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
 
@@ -519,16 +519,12 @@ export default {
     PersonSelect
   },
   data() {
-    const { applyPhoneMask, applyCpfMask, applyRgMask, applyZipMask, fetchAddressByCep, handleCurrencyMaskInput, parseCurrencyToNumber } = useInputMasks()
+    const { applyCurrencyMask, parseCurrencyToNumber, getWhatsAppLink } = useBrazilianMasks()
 
     return {
-      applyPhoneMask,
-      applyCpfMask,
-      applyRgMask,
-      applyZipMask,
-      fetchAddressByCep,
-      handleCurrencyMaskInput,
+      applyCurrencyMask,
       parseCurrencyToNumber,
+      getWhatsAppLink,
       currentMonth: new Date().getMonth(),
       currentYear: new Date().getFullYear(),
       bookings: [],
@@ -647,36 +643,6 @@ export default {
       const id = String(this.form.seller_id || '')
       if (!id) return null
       return this.sellers.find(s => String(s.id) === id) || null
-    },
-
-    customerWhatsAppLink() {
-      const phone = this.selectedCustomer && this.selectedCustomer.phone
-      if (!phone) return null
-      const digits = String(phone).replace(/\D/g, '')
-      if (digits.length === 10 || digits.length === 11) {
-        return this.makeWhatsAppLink(phone)
-      }
-      return null
-    },
-
-    cleanerWhatsAppLink() {
-      const phone = this.selectedCleaner && this.selectedCleaner.phone
-      if (!phone) return null
-      const digits = String(phone).replace(/\D/g, '')
-      if (digits.length === 10 || digits.length === 11) {
-        return this.makeWhatsAppLink(phone)
-      }
-      return null
-    },
-
-    sellerWhatsAppLink() {
-      const phone = this.selectedSeller && this.selectedSeller.phone
-      if (!phone) return null
-      const digits = String(phone).replace(/\D/g, '')
-      if (digits.length === 10 || digits.length === 11) {
-        return this.makeWhatsAppLink(phone)
-      }
-      return null
     }
   },
 
@@ -1070,18 +1036,6 @@ export default {
       } finally {
         this.deleting = false
       }
-    },
-
-    makeWhatsAppLink(phone) {
-      if (!phone) return null
-      let digits = String(phone).replace(/\D/g, '')
-      if (!digits) return null
-      if (digits.startsWith('55')) {
-        // already in intl format
-      } else if (digits.length === 11 || digits.length === 10) {
-        digits = '55' + digits
-      }
-      return `https://wa.me/${digits}`
     },
 
     async exportContract() {
