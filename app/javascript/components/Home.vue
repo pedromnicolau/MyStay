@@ -1,25 +1,50 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-    <div class="text-center">
-      <h1 class="text-4xl font-bold text-gray-900 mb-4">MyStay</h1>
-      <p class="text-gray-600 text-lg mb-8">Página inicial</p>
-      <button
-        @click="logout"
-        class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition"
-      >
-        Logout
-      </button>
-    </div>
+  <div class="min-h-screen bg-gray-50">
+    <Navbar :user="user" />
+    
+    <Dashboard v-if="currentRoute === 'dashboard'" />
+    <Customers v-else-if="currentRoute === 'customers'" />
+    <Sellers v-else-if="currentRoute === 'sellers'" />
+    <Cleaners v-else-if="currentRoute === 'cleaners'" />
+    <Properties v-else-if="currentRoute === 'properties'" />
+    <Bookings v-else-if="currentRoute === 'bookings'" />
+    <Profile v-else-if="currentRoute === 'profile'" :user="user" />
   </div>
 </template>
 
 <script>
+import Navbar from './Navbar.vue'
+import Dashboard from './Dashboard.vue'
+import Customers from './Customers.vue'
+import Sellers from './Sellers.vue'
+import Cleaners from './Cleaners.vue'
+import Properties from './Properties.vue'
+import Bookings from './Bookings.vue'
+import Profile from './Profile.vue'
+import { router } from '../router.js'
+
 export default {
-  methods: {
-    logout() {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.reload()
+  components: {
+    Navbar,
+    Dashboard,
+    Customers,
+    Sellers,
+    Cleaners,
+    Properties,
+    Bookings,
+    Profile
+  },
+
+  props: {
+    user: {
+      type: Object,
+      required: true
+    }
+  },
+
+  computed: {
+    currentRoute() {
+      return router.currentRoute
     }
   }
 }

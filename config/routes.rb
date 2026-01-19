@@ -1,9 +1,6 @@
 Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
-  root "pages#app"
-  get "/*path", to: "pages#app"
-
   namespace :api do
     namespace :v1 do
       post "/auth/register", to: "auth#register"
@@ -15,6 +12,12 @@ Rails.application.routes.draw do
       resources :properties
       get "/users/profile", to: "users#profile"
       patch "/users/profile", to: "users#update"
+      get "/me", to: "users#me"
+      put "/me", to: "users#update_me"
+      patch "/me", to: "users#update_me"
     end
   end
+
+  root "pages#app"
+  get "/*path", to: "pages#app"
 end

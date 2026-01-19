@@ -1,0 +1,39 @@
+pt-BR:
+  activerecord:
+    errors:
+      messages:
+        taken: "já está em uso"
+        blank: "não pode ficar em branco"
+        invalid: "não é válido"
+        required: "é obrigatório"
+        record_invalid: "Validação falhou: %{errors}"
+      models:
+        person:
+          attributes:
+            cpf:
+              taken: "já está cadastrado"
+            rg:
+              taken: "já está cadastrado"
+            name:
+              blank: "não pode ficar em branco"
+            phone:
+              blank: "não pode ficar em branco"
+    models:
+      person: "Pessoa"
+    attributes:
+      person:
+        name: "Nome"
+        cpf: "CPF"
+        rg: "RG"
+        phone: "Telefone"
+        email: "E-mail"
+        profession: "Profissão"
+        marital_status: "Estado Civil"
+        city: "Cidade"
+        state: "Estado"
+        address: "Endereço"
+        number: "Número"
+        neighborhood: "Bairro"
+        zip: "CEP"
+        note: "Observações"
+        blocked: "Bloqueado"

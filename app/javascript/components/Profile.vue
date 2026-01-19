@@ -1,0 +1,435 @@
+<template>
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <button @click="goBack" class="flex items-center space-x-2 text-indigo-600 hover:text-indigo-700 mb-4 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>Voltar</span>
+        </button>
+        <h1 class="text-3xl font-bold text-gray-900">Meu Perfil</h1>
+        <p class="text-gray-600 mt-2">Atualize suas informações pessoais</p>
+      </div>
+
+      <!-- Formulário -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <form @submit.prevent="saveProfile" class="space-y-6">
+          <!-- Seção de Informações Pessoais -->
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Informações Pessoais</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                <input
+                  v-model="form.first_name"
+                  type="text"
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label>
+                <input
+                  v-model="form.last_name"
+                  type="text"
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção de Contato -->
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Informações de Contato</h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
+                <input
+                  v-model="form.email"
+                  type="email"
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <input
+                  v-model="form.phone"
+                  @input="applyPhoneMask"
+                  type="tel"
+                  placeholder="(00) 00000-0000"
+                  maxlength="15"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção de Endereço -->
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Endereço</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                <input
+                  v-model="form.zip"
+                  @input="applyZipMask"
+                  type="text"
+                  placeholder="00000-000"
+                  maxlength="9"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">País</label>
+                <input
+                  v-model="form.country"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                <input
+                  v-model="form.address"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                <input
+                  v-model="form.number"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                <input
+                  v-model="form.neighborhood"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                <input
+                  v-model="form.city"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <select
+                  v-model="form.state"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Selecione</option>
+                  <option v-for="state in stateOptions" :key="state.value" :value="state.value">
+                    {{ state.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção de Segurança -->
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Alterar Senha</h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Senha Atual</label>
+                <input
+                  v-model="form.current_password"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
+                <input
+                  v-model="form.password"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+                <input
+                  v-model="form.password_confirmation"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Mensagens de erro e sucesso -->
+          <div v-if="successMessage" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span>{{ successMessage }}</span>
+          </div>
+
+          <div v-if="errors.general" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+            <span>{{ errors.general }}</span>
+          </div>
+
+          <!-- Botões de ação -->
+          <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              @click="goBack"
+              class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              :disabled="saving"
+              class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium disabled:opacity-50"
+            >
+              {{ saving ? 'Salvando...' : 'Salvar Alterações' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from 'axios'
+import { navigateTo } from '../router.js'
+
+export default {
+  props: {
+    user: {
+      type: Object,
+      required: true
+    }
+  },
+
+  data() {
+    return {
+      form: {
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        zip: '',
+        address: '',
+        number: '',
+        neighborhood: '',
+        city: '',
+        country: '',
+        country: '',
+        state: '',
+        current_password: '',
+        password: '',
+        password_confirmation: ''
+      },
+      saving: false,
+      successMessage: '',
+      errors: {},
+      stateOptions: [
+        { value: 'AC', label: 'Acre' },
+        { value: 'AL', label: 'Alagoas' },
+        { value: 'AP', label: 'Amapá' },
+        { value: 'AM', label: 'Amazonas' },
+        { value: 'BA', label: 'Bahia' },
+        { value: 'CE', label: 'Ceará' },
+        { value: 'DF', label: 'Distrito Federal' },
+        { value: 'ES', label: 'Espírito Santo' },
+        { value: 'GO', label: 'Goiás' },
+        { value: 'MA', label: 'Maranhão' },
+        { value: 'MT', label: 'Mato Grosso' },
+        { value: 'MS', label: 'Mato Grosso do Sul' },
+        { value: 'MG', label: 'Minas Gerais' },
+        { value: 'PA', label: 'Pará' },
+        { value: 'PB', label: 'Paraíba' },
+        { value: 'PR', label: 'Paraná' },
+        { value: 'PE', label: 'Pernambuco' },
+        { value: 'PI', label: 'Piauí' },
+        { value: 'RJ', label: 'Rio de Janeiro' },
+        { value: 'RN', label: 'Rio Grande do Norte' },
+        { value: 'RS', label: 'Rio Grande do Sul' },
+        { value: 'RO', label: 'Rondônia' },
+        { value: 'RR', label: 'Roraima' },
+        { value: 'SC', label: 'Santa Catarina' },
+        { value: 'SP', label: 'São Paulo' },
+        { value: 'SE', label: 'Sergipe' },
+        { value: 'TO', label: 'Tocantins' }
+      ]
+    }
+  },
+
+  mounted() {
+    this.loadUserData()
+    this.fetchProfile()
+  },
+
+  methods: {
+    loadUserData() {
+      this.form = {
+        first_name: this.user.first_name || '',
+        last_name: this.user.last_name || '',
+        email: this.user.email || '',
+        phone: this.user.phone || '',
+        zip: this.user.zip || '',
+        address: this.user.address || '',
+        number: this.user.number || '',
+        neighborhood: this.user.neighborhood || '',
+        city: this.user.city || '',
+        country: this.user.country || '',
+        state: this.user.state || '',
+        current_password: '',
+        password: '',
+        password_confirmation: ''
+      }
+    },
+
+    async fetchProfile() {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
+        const response = await axios.get('/api/v1/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const userData = response.data
+        this.form = {
+          first_name: userData.first_name || '',
+          last_name: userData.last_name || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          zip: userData.zip || '',
+          address: userData.address || '',
+          number: userData.number || '',
+          neighborhood: userData.neighborhood || '',
+          city: userData.city || '',
+          country: userData.country || '',
+          state: userData.state || '',
+          current_password: '',
+          password: '',
+          password_confirmation: ''
+        }
+
+        localStorage.setItem('user', JSON.stringify(userData))
+      } catch (error) {
+        console.error('Erro ao carregar perfil', error)
+      }
+    },
+
+    async saveProfile() {
+      this.saving = true
+      this.errors = {}
+      this.successMessage = ''
+
+      try {
+        const token = localStorage.getItem('token')
+        const payload = { ...this.form }
+
+        // Remove senhas vazias do payload
+        if (!payload.current_password) {
+          delete payload.current_password
+        }
+        if (!payload.password) {
+          delete payload.password
+        }
+        if (!payload.password_confirmation) {
+          delete payload.password_confirmation
+        }
+
+        const response = await axios.put(
+          '/api/v1/me',
+          { user: payload },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        )
+
+        // Atualiza o usuário no localStorage
+        localStorage.setItem('user', JSON.stringify(response.data))
+
+        this.successMessage = 'Perfil atualizado com sucesso!'
+        setTimeout(() => {
+          this.successMessage = ''
+        }, 3000)
+      } catch (err) {
+        if (err.response?.data?.errors) {
+          const errorList = err.response.data.errors
+          if (Array.isArray(errorList)) {
+            this.errors.general = errorList.join(', ')
+          } else if (typeof errorList === 'object') {
+            const firstKey = Object.keys(errorList)[0]
+            this.errors.general = errorList[firstKey]?.[0] || 'Erro ao salvar perfil'
+          } else {
+            this.errors.general = errorList
+          }
+        } else {
+          this.errors.general = 'Erro ao salvar perfil'
+        }
+      } finally {
+        this.saving = false
+      }
+    },
+
+    applyPhoneMask(event) {
+      let value = event.target.value.replace(/\D/g, '')
+      let formattedValue = ''
+
+      if (value.length <= 10) {
+        if (value.length > 6) {
+          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6, 10)}`
+        } else if (value.length > 2) {
+          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}`
+        } else if (value.length > 0) {
+          formattedValue = `(${value.slice(0, 2)}`
+        }
+      } else {
+        formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7, 11)}`
+      }
+
+      event.target.value = formattedValue
+      this.form.phone = formattedValue
+    },
+
+    applyZipMask(event) {
+      let value = event.target.value.replace(/\D/g, '')
+      let formattedValue = ''
+
+      if (value.length > 5) {
+        formattedValue = `${value.slice(0, 5)}-${value.slice(5, 8)}`
+      } else {
+        formattedValue = value
+      }
+
+      event.target.value = formattedValue
+      this.form.zip = formattedValue
+    },
+
+    goBack() {
+      navigateTo('dashboard')
+    }
+  }
+}
+</script>

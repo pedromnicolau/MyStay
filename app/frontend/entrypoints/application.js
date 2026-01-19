@@ -1,6 +1,21 @@
 import { createApp } from 'vue'
 import axios from 'axios'
 
+// Ensure Font Awesome styles are available even if CDN in layout fails to load
+const ensureFontAwesome = () => {
+  const existing = document.querySelector('link[data-fa="true"]')
+  if (existing) return
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
+  link.crossOrigin = 'anonymous'
+  link.referrerPolicy = 'no-referrer'
+  link.setAttribute('data-fa', 'true')
+  document.head.appendChild(link)
+}
+
+ensureFontAwesome()
+
 const setAuthHeader = (token) => {
   if (token) {
     axios.defaults.headers.common.Authorization = `Bearer ${token}`

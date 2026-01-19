@@ -43,6 +43,6 @@ class Api::V1::PeopleController < ApplicationController
 
   def person_params
     params.require(:person).permit(:name, :cpf, :rg, :phone, :email, :profession, :marital_status,
-                                   :city, :address, :neighborhood, :zip, :note, :blocked, :comments, :type)
+                                   :city, :state, :address, :number, :neighborhood, :zip, :note, :blocked, :comments, :type)
   end
 end

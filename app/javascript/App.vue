@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <Auth v-if="!isLoggedIn" @login="handleLogin" />
-    <Home v-else />
+    <Home v-else :user="currentUser" />
   </div>
 </template>
 
@@ -17,19 +17,24 @@ export default {
 
   data() {
     return {
-      isLoggedIn: false
+      isLoggedIn: false,
+      currentUser: null
     }
   },
 
   mounted() {
     const token = localStorage.getItem('token')
-    if (token) {
+    const user = localStorage.getItem('user')
+    
+    if (token && user) {
+      this.currentUser = JSON.parse(user)
       this.isLoggedIn = true
     }
   },
 
   methods: {
-    handleLogin() {
+    handleLogin(user) {
+      this.currentUser = user
       this.isLoggedIn = true
     }
   }

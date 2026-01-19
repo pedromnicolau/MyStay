@@ -23,7 +23,7 @@ class Api::V1::AuthController < ApplicationController
         token: encode_token(user.id)
       }, status: :ok
     else
-      render json: { error: "Invalid email or password" }, status: :unauthorized
+      render json: { error: "Email ou senha inválidos" }, status: :unauthorized
     end
   end
 
@@ -48,7 +48,22 @@ class Api::V1::AuthController < ApplicationController
   private
 
   def user_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :first_name, :last_name, :phone)
+    params.require(:user).permit(
+      :email,
+      :password,
+      :password_confirmation,
+      :first_name,
+      :last_name,
+      :phone,
+      :country,
+      :city,
+      :state,
+      :zip,
+      :address,
+      :number,
+      :neighborhood,
+      :profile_image
+    )
   end
 
   def secret_key
@@ -73,8 +88,13 @@ class Api::V1::AuthController < ApplicationController
       first_name: user.first_name,
       last_name: user.last_name,
       phone: user.phone,
+      zip: user.zip,
+      address: user.address,
+      number: user.number,
+      neighborhood: user.neighborhood,
       country: user.country,
       city: user.city,
+      state: user.state,
       profile_image: user.profile_image
     }
   end
