@@ -198,36 +198,12 @@
 <script>
 import CrudBase from './CrudBase.vue'
 import SelectWithFilter from './SelectWithFilter.vue'
+import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
+import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
+import { useViaCep } from '../composables/useViaCep.js'
 
-const stateOptions = [
-  { value: 'AC', label: 'Acre' },
-  { value: 'AL', label: 'Alagoas' },
-  { value: 'AP', label: 'Amapá' },
-  { value: 'AM', label: 'Amazonas' },
-  { value: 'BA', label: 'Bahia' },
-  { value: 'CE', label: 'Ceará' },
-  { value: 'DF', label: 'Distrito Federal' },
-  { value: 'ES', label: 'Espírito Santo' },
-  { value: 'GO', label: 'Goiás' },
-  { value: 'MA', label: 'Maranhão' },
-  { value: 'MT', label: 'Mato Grosso' },
-  { value: 'MS', label: 'Mato Grosso do Sul' },
-  { value: 'MG', label: 'Minas Gerais' },
-  { value: 'PA', label: 'Pará' },
-  { value: 'PB', label: 'Paraíba' },
-  { value: 'PR', label: 'Paraná' },
-  { value: 'PE', label: 'Pernambuco' },
-  { value: 'PI', label: 'Piauí' },
-  { value: 'RJ', label: 'Rio de Janeiro' },
-  { value: 'RN', label: 'Rio Grande do Norte' },
-  { value: 'RS', label: 'Rio Grande do Sul' },
-  { value: 'RO', label: 'Rondônia' },
-  { value: 'RR', label: 'Roraima' },
-  { value: 'SC', label: 'Santa Catarina' },
-  { value: 'SP', label: 'São Paulo' },
-  { value: 'SE', label: 'Sergipe' },
-  { value: 'TO', label: 'Tocantins' }
-]
+const { getWhatsAppLink, handlePhoneInput, handleCpfInput, handleRgInput } = useBrazilianMasks()
+const { handleCepLookup } = useViaCep()
 
 export default {
   components: {
@@ -237,7 +213,7 @@ export default {
 
   data() {
     return {
-      stateOptions,
+      stateOptions: BRAZILIAN_STATES,
       columns: [
         { key: 'name', label: 'Nome' },
         { key: 'cpf', label: 'CPF' },
@@ -271,131 +247,24 @@ export default {
   },
 
   methods: {
-    async fetchAddressByCep(event) {
-      const cepInput = event.target
-      let value = cepInput.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 5) {
-        formattedValue = `${value.slice(0, 5)}-${value.slice(5, 8)}`
-      } else {
-        formattedValue = value
-      }
-      
-      cepInput.value = formattedValue
-      
-      // Se o CEP está completo, buscar dados
-      if (value.length === 8) {
-        try {
-          const response = await fetch(`https://viacep.com.br/ws/${value}/json/`)
-          const data = await response.json()
-          
-          if (data.logradouro) {
-            // Usar os refs para preencher os campos
-            if (this.$refs.addressInput) {
-              this.$refs.addressInput.value = data.logradouro
-              this.$refs.addressInput.dispatchEvent(new Event('input', { bubbles: true }))
-            }
-            if (this.$refs.neighborhoodInput) {
-              this.$refs.neighborhoodInput.value = data.bairro
-              this.$refs.neighborhoodInput.dispatchEvent(new Event('input', { bubbles: true }))
-            }
-            if (this.$refs.cityInput) {
-              this.$refs.cityInput.value = data.localidade
-              this.$refs.cityInput.dispatchEvent(new Event('input', { bubbles: true }))
-            }
-            // State é handled via v-model no SelectWithFilter
-            if (this.$refs.stateInput) {
-              this.$refs.stateInput.$emit('update:modelValue', data.uf)
-            }
-          }
-        } catch (error) {
-          console.error('Erro ao buscar CEP:', error)
-        }
-      }
+    fetchAddressByCep(event) {
+      handleCepLookup(event, this.$refs, this.form)
     },
 
     applyPhoneMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length <= 10) {
-        // Formato: (00) 0000-0000
-        if (value.length > 6) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6, 10)}`
-        } else if (value.length > 2) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}`
-        } else if (value.length > 0) {
-          formattedValue = `(${value.slice(0, 2)}`
-        }
-      } else {
-        // Formato: (00) 00000-0000
-        formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7, 11)}`
-      }
-      
-      event.target.value = formattedValue
-      this.form.phone = formattedValue
+      handlePhoneInput(event, this.form)
     },
 
     applyCpfMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 9) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9, 11)}`
-      } else if (value.length > 6) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}`
-      } else if (value.length > 3) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.form.cpf = formattedValue
+      handleCpfInput(event, this.form)
     },
 
     applyRgMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 8) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}-${value.slice(8, 9)}`
-      } else if (value.length > 5) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5)}`
-      } else if (value.length > 2) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.form.rg = formattedValue
-    },
-
-    applyZipMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 5) {
-        formattedValue = `${value.slice(0, 5)}-${value.slice(5, 8)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.form.zip = formattedValue
+      handleRgInput(event, this.form)
     },
 
     phoneWhatsAppLink(phone) {
-      if (!phone) return null
-      const digits = String(phone).replace(/\D/g, '')
-      if (digits.length !== 10 && digits.length !== 11) return null
-      let finalDigits = digits
-      if (!finalDigits.startsWith('55')) {
-        finalDigits = '55' + finalDigits
-      }
-      return `https://wa.me/${finalDigits}`
+      return getWhatsAppLink(phone)
     }
   }
 }

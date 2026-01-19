@@ -4,26 +4,32 @@ class Api::V1::PropertiesController < ApplicationController
   before_action :set_property, only: [ :show, :update, :destroy ]
 
   def index
-    properties = current_user.properties.order(created_at: :desc)
-    render json: properties, status: :ok
+    properties = current_user.properties.with_attached_attachments.order(created_at: :desc)
+    render json: properties.map { |property| serialize_property(property) }, status: :ok
   end
 
   def show
-    render json: @property, status: :ok
+    render json: serialize_property(@property), status: :ok
   end
 
   def create
-    property = current_user.properties.build(property_params)
+    property = current_user.properties.build(property_payload)
+
     if property.save
-      render json: property, status: :created
+      attach_new_files_to(property)
+      assign_main_attachment_if_needed(property)
+      render json: serialize_property(property), status: :created
     else
       render json: { errors: property.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
   def update
-    if @property.update(property_params)
-      render json: @property, status: :ok
+    if @property.update(property_payload)
+      attach_new_files
+      purge_removed_attachments
+      assign_main_attachment_if_needed
+      render json: serialize_property(@property), status: :ok
     else
       render json: { errors: @property.errors.full_messages }, status: :unprocessable_entity
     end
@@ -37,10 +43,102 @@ class Api::V1::PropertiesController < ApplicationController
   private
 
   def set_property
-    @property = current_user.properties.find(params[:id])
+    @property = current_user.properties.with_attached_attachments.find(params[:id])
   end
 
   def property_params
-    params.require(:property).permit(:name, :address, :number, :neighborhood, :zip, :city, :state, :image, :active)
+    params.require(:property).permit(
+      :name, :description, :address, :number, :neighborhood, :zip, :city, :state, :active,
+      :bedrooms, :bathrooms, :max_guests,
+      :air_conditioning, :wifi, :tv, :kitchen, :parking_included,
+      :washing_machine, :pool, :barbecue_grill, :balcony, :pet_friendly, :wheelchair_accessible,
+      :main_attachment_id, :main_attachment_name,
+      attachments: [], remove_attachment_ids: []
+    )
+  end
+
+  def property_payload
+    permitted = property_params
+    permitted = permitted.except(:remove_attachment_ids, :attachments)
+
+    unless Property.new.respond_to?(:main_attachment_id)
+      permitted = permitted.except(:main_attachment_id, :main_attachment_name)
+    end
+
+    permitted
+  end
+
+  def attach_new_files
+    new_files = params.dig(:property, :attachments)
+    return if new_files.blank?
+
+    @property.attachments.attach(new_files)
+  end
+
+  def attach_new_files_to(property)
+    new_files = params.dig(:property, :attachments)
+    return if new_files.blank?
+
+    property.attachments.attach(new_files)
+  end
+
+  def purge_removed_attachments
+    ids = params.dig(:property, :remove_attachment_ids)
+    return if ids.blank?
+
+    Array(ids).each do |attachment_id|
+      attachment = @property.attachments.find_by(id: attachment_id)
+      attachment&.purge_later
+    end
+
+    if @property.respond_to?(:main_attachment_id) && @property.main_attachment_id.present? && Array(ids).map(&:to_s).include?(@property.main_attachment_id.to_s)
+      @property.update_column(:main_attachment_id, nil)
+    end
+  end
+
+  def serialize_property(property)
+    property.as_json.merge(
+      attachments: attachments_payload(property)
+    )
+  end
+
+  def attachments_payload(property)
+    main_id = property.respond_to?(:main_attachment_id) ? property.main_attachment_id : nil
+
+    property.attachments.map do |attachment|
+      {
+        id: attachment.id,
+        filename: attachment.filename.to_s,
+        content_type: attachment.content_type,
+        byte_size: attachment.byte_size,
+        created_at: attachment.created_at,
+        url: url_for(attachment),
+        is_main: main_id.present? && attachment.id == main_id
+      }
+    end.sort_by { |att| att[:is_main] ? 0 : 1 }
+  end
+
+  def assign_main_attachment_if_needed(property_record = @property)
+    return unless property_record
+    return unless property_record.respond_to?(:main_attachment_id)
+
+    main_id = params.dig(:property, :main_attachment_id)
+    main_name = params.dig(:property, :main_attachment_name)
+
+    if main_id.present?
+      property_record.update_column(:main_attachment_id, main_id)
+      return
+    end
+
+    return if main_name.blank?
+
+    candidate = property_record.attachments.where("active_storage_blobs.filename = ?", main_name)
+      .joins(:blob)
+      .order(created_at: :desc)
+      .first
+
+    if candidate
+      property_record.update_column(:main_attachment_id, candidate.id)
+    end
   end
 end

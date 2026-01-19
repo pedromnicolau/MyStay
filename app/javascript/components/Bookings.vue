@@ -138,7 +138,7 @@
             @click="viewBooking(booking)"
             :class="[
               'p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition',
-              booking.property_type === 'cleaning' ? 'bg-emerald-50 border-emerald-500' : 'bg-indigo-50 border-indigo-500'
+              booking.property_type === 'cleaning' ? 'bg-amber-50 border-amber-500' : 'bg-indigo-50 border-indigo-500'
             ]"
           >
             <div class="flex justify-between items-start">
@@ -147,7 +147,7 @@
                   <h4 class="font-semibold text-gray-900">{{ getBookingLabel(booking) }}</h4>
                   <span
                     v-if="booking.property_type === 'cleaning'"
-                    class="text-xs px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800"
+                    class="text-xs px-2 py-0.5 rounded-full bg-amber-200 text-amber-800"
                   >
                     Faxina
                   </span>
@@ -206,34 +206,13 @@
           <div v-if="entryType === 'cleaning'" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="block text-sm font-medium text-gray-700">Faxineira *</label>
-                  <a
-                    v-if="cleanerWhatsAppLink"
-                    :href="cleanerWhatsAppLink"
-                    target="_blank"
-                    rel="noopener"
-                    class="text-gray-400 hover:text-emerald-600 transition"
-                    :title="'WhatsApp de ' + (selectedCleaner ? selectedCleaner.name : 'Contato')"
-                  >
-                    <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-                      <path d="M19.11 17.36c-.28-.14-1.64-.81-1.9-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.17.19-.33.21-.61.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.91-.16-.28-.02-.43.12-.57.12-.12.28-.33.42-.5.14-.17.19-.28.28-.47.09-.19.05-.36-.02-.5-.07-.14-.64-1.53-.88-2.1-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.28-1 1-1 2.45 0 1.44 1.03 2.84 1.17 3.04.14.19 2.02 3.08 4.89 4.31.68.29 1.21.46 1.62.58.68.22 1.31.19 1.8.12.55-.08 1.64-.67 1.87-1.31.23-.64.23-1.19.16-1.31-.07-.12-.26-.19-.54-.33z"/>
-                      <path d="M26.73 5.27C24.24 2.79 21.21 1.5 18 1.5 9.99 1.5 3.5 7.99 3.5 16c0 2.56.67 5.06 1.94 7.27L3 31l7.91-2.38C13.06 29.89 15.49 30.5 18 30.5 26.01 30.5 32.5 24.01 32.5 16c0-3.21-1.29-6.24-3.77-8.73zM18 28.5c-2.29 0-4.52-.62-6.47-1.8l-.46-.27-4.7 1.41 1.45-4.57-.3-.47C6.3 20.3 5.5 18.18 5.5 16 5.5 9.1 11.1 3.5 18 3.5S30.5 9.1 30.5 16 24.9 28.5 18 28.5z"/>
-                    </svg>
-                  </a>
-                </div>
-                <select
-                  v-model.number="form.customer_id"
-                  @change="handleCleanerChange"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="new" class="font-semibold text-indigo-600">+ Nova Faxineira</option>
-                  <option value="" disabled>Selecione uma faxineira</option>
-                  <option v-for="cleaner in activeCleaners" :key="cleaner.id" :value="cleaner.id">
-                    {{ cleaner.name }}
-                  </option>
-                </select>
+                <PersonSelect
+                  v-model="form.customer_id"
+                  :options="cleanerOptions"
+                  :selected-person="selectedCleaner"
+                  label="Faxineira *"
+                  @update:modelValue="handleCleanerChange"
+                />
               </div>
 
               <div>
@@ -296,34 +275,13 @@
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block text-sm font-medium text-gray-700">Hóspede *</label>
-                <a
-                  v-if="customerWhatsAppLink"
-                  :href="customerWhatsAppLink"
-                  target="_blank"
-                  rel="noopener"
-                  class="text-gray-400 hover:text-emerald-600 transition"
-                  :title="'WhatsApp de ' + (selectedCustomer ? selectedCustomer.name : 'Contato')"
-                >
-                  <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-                    <path d="M19.11 17.36c-.28-.14-1.64-.81-1.9-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.17.19-.33.21-.61.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.91-.16-.28-.02-.43.12-.57.12-.12.28-.33.42-.5.14-.17.19-.28.28-.47.09-.19.05-.36-.02-.5-.07-.14-.64-1.53-.88-2.1-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.28-1 1-1 2.45 0 1.44 1.03 2.84 1.17 3.04.14.19 2.02 3.08 4.89 4.31.68.29 1.21.46 1.62.58.68.22 1.31.19 1.8.12.55-.08 1.64-.67 1.87-1.31.23-.64.23-1.19.16-1.31-.07-.12-.26-.19-.54-.33z"/>
-                    <path d="M26.73 5.27C24.24 2.79 21.21 1.5 18 1.5 9.99 1.5 3.5 7.99 3.5 16c0 2.56.67 5.06 1.94 7.27L3 31l7.91-2.38C13.06 29.89 15.49 30.5 18 30.5 26.01 30.5 32.5 24.01 32.5 16c0-3.21-1.29-6.24-3.77-8.73zM18 28.5c-2.29 0-4.52-.62-6.47-1.8l-.46-.27-4.7 1.41 1.45-4.57-.3-.47C6.3 20.3 5.5 18.18 5.5 16 5.5 9.1 11.1 3.5 18 3.5S30.5 9.1 30.5 16 24.9 28.5 18 28.5z"/>
-                  </svg>
-                </a>
-              </div>
-              <select
-                v-model.number="form.customer_id"
-                @change="handleCustomerChange"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="new" class="font-semibold text-indigo-600">+ Novo Hóspede</option>
-                <option value="" disabled>Selecione um hóspede</option>
-                <option v-for="customer in activeCustomers" :key="customer.id" :value="customer.id">
-                  {{ customer.name }}
-                </option>
-              </select>
+              <PersonSelect
+                v-model="form.customer_id"
+                :options="customerOptions"
+                :selected-person="selectedCustomer"
+                label="Hóspede *"
+                @update:modelValue="handleCustomerChange"
+              />
             </div>
 
             <div>
@@ -421,33 +379,13 @@
             </div>
 
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block text-sm font-medium text-gray-700">Corretor</label>
-                <a
-                  v-if="sellerWhatsAppLink"
-                  :href="sellerWhatsAppLink"
-                  target="_blank"
-                  rel="noopener"
-                  class="text-gray-400 hover:text-emerald-600 transition"
-                  :title="'WhatsApp de ' + (selectedSeller ? selectedSeller.name : 'Contato')"
-                >
-                  <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-                    <path d="M19.11 17.36c-.28-.14-1.64-.81-1.9-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.17.19-.33.21-.61.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.91-.16-.28-.02-.43.12-.57.12-.12.28-.33.42-.5.14-.17.19-.28.28-.47.09-.19.05-.36-.02-.5-.07-.14-.64-1.53-.88-2.1-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.28-1 1-1 2.45 0 1.44 1.03 2.84 1.17 3.04.14.19 2.02 3.08 4.89 4.31.68.29 1.21.46 1.62.58.68.22 1.31.19 1.8.12.55-.08 1.64-.67 1.87-1.31.23-.64.23-1.19.16-1.31-.07-.12-.26-.19-.54-.33z"/>
-                    <path d="M26.73 5.27C24.24 2.79 21.21 1.5 18 1.5 9.99 1.5 3.5 7.99 3.5 16c0 2.56.67 5.06 1.94 7.27L3 31l7.91-2.38C13.06 29.89 15.49 30.5 18 30.5 26.01 30.5 32.5 24.01 32.5 16c0-3.21-1.29-6.24-3.77-8.73zM18 28.5c-2.29 0-4.52-.62-6.47-1.8l-.46-.27-4.7 1.41 1.45-4.57-.3-.47C6.3 20.3 5.5 18.18 5.5 16 5.5 9.1 11.1 3.5 18 3.5S30.5 9.1 30.5 16 24.9 28.5 18 28.5z"/>
-                  </svg>
-                </a>
-              </div>
-              <select
-                v-model.number="form.seller_id"
-                @change="handleSellerChange"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="new" class="font-semibold text-indigo-600">+ Novo Corretor</option>
-                <option value="">Selecione um corretor</option>
-                <option v-for="seller in activeSellers" :key="seller.id" :value="seller.id">
-                  {{ seller.name }}
-                </option>
-              </select>
+              <PersonSelect
+                v-model="form.seller_id"
+                :options="sellerOptions"
+                :selected-person="selectedSeller"
+                label="Corretor"
+                @update:modelValue="handleSellerChange"
+              />
             </div>
 
             <div>
@@ -530,6 +468,15 @@
             >
               {{ saving ? 'Salvando...' : 'Salvar' }}
             </button>
+            <button
+              v-if="editingBooking && entryType !== 'cleaning'"
+              type="button"
+              @click="exportContract"
+              :disabled="contractDownloading"
+              class="px-4 py-2 border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition disabled:opacity-50"
+            >
+              {{ contractDownloading ? 'Gerando contrato...' : 'Exportar contrato' }}
+            </button>
           </div>
         </div>
       </div>
@@ -554,9 +501,12 @@
 </template>
 
 <script>
+import axios from 'axios'
 import { router } from '../router.js'
 import QuickPersonModal from './QuickPersonModal.vue'
 import ConfirmationModal from './ConfirmationModal.vue'
+import SelectWithFilter from './SelectWithFilter.vue'
+import PersonSelect from './PersonSelect.vue'
 import { useInputMasks } from '../composables/useInputMasks.js'
 import { useApi } from '../composables/useApi.js'
 import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
@@ -564,7 +514,9 @@ import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
 export default {
   components: {
     QuickPersonModal,
-    ConfirmationModal
+    ConfirmationModal,
+    SelectWithFilter,
+    PersonSelect
   },
   data() {
     const { applyPhoneMask, applyCpfMask, applyRgMask, applyZipMask, fetchAddressByCep, handleCurrencyMaskInput, parseCurrencyToNumber } = useInputMasks()
@@ -592,6 +544,7 @@ export default {
       saving: false,
       deleteConfirmBooking: null,
       deleting: false,
+      contractDownloading: false,
       formErrors: {},
       form: this.getEmptyForm(),
       quickPersonModalOpen: {
@@ -655,6 +608,27 @@ export default {
 
     activeSellers() {
       return this.sellers.filter(s => !s.blocked)
+    },
+
+    customerOptions() {
+      return [
+        { value: 'new', label: '+ Novo Hóspede' },
+        ...this.activeCustomers.map(c => ({ value: String(c.id), label: c.name }))
+      ]
+    },
+
+    cleanerOptions() {
+      return [
+        { value: 'new', label: '+ Nova Faxineira' },
+        ...this.activeCleaners.map(c => ({ value: String(c.id), label: c.name }))
+      ]
+    },
+
+    sellerOptions() {
+      return [
+        { value: 'new', label: '+ Novo Corretor' },
+        ...this.activeSellers.map(s => ({ value: String(s.id), label: s.name }))
+      ]
     },
 
     selectedCustomer() {
@@ -832,7 +806,7 @@ export default {
 
     getBookingColor(booking) {
       if (booking.property_type === 'cleaning') {
-        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+        return 'bg-amber-100 text-amber-800 hover:bg-amber-200'
       }
       return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
     },
@@ -937,9 +911,9 @@ export default {
       this.form = {
         ...this.getEmptyForm(type),
         ...booking,
-        customer_id: booking.customer_id || '',
+        customer_id: booking.customer_id ? String(booking.customer_id) : '',
         property_id: booking.property_id || '',
-        seller_id: booking.seller_id || '',
+        seller_id: booking.seller_id ? String(booking.seller_id) : '',
         property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
         // Formatar valores monetários para exibição
         total_due: this.formatCurrencyDisplay(booking.total_due || 0),
@@ -958,9 +932,9 @@ export default {
       this.form = {
         ...this.getEmptyForm(type),
         ...booking,
-        customer_id: booking.customer_id || '',
+        customer_id: booking.customer_id ? String(booking.customer_id) : '',
         property_id: booking.property_id || '',
-        seller_id: booking.seller_id || '',
+        seller_id: booking.seller_id ? String(booking.seller_id) : '',
         property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
         // Formatar valores monetários para exibição
         total_due: this.formatCurrencyDisplay(booking.total_due || 0),
@@ -1039,22 +1013,22 @@ export default {
       this.deleteConfirmBooking = booking
     },
 
-    handleCustomerChange(event) {
-      if (event.target.value === 'new') {
+    handleCustomerChange(value) {
+      if (value === 'new') {
         this.quickPersonModalOpen = { isOpen: true, type: 'Customer' }
         this.form.customer_id = ''
       }
     },
 
-    handleCleanerChange(event) {
-      if (event.target.value === 'new') {
+    handleCleanerChange(value) {
+      if (value === 'new') {
         this.quickPersonModalOpen = { isOpen: true, type: 'Cleaner' }
         this.form.customer_id = ''
       }
     },
 
-    handleSellerChange(event) {
-      if (event.target.value === 'new') {
+    handleSellerChange(value) {
+      if (value === 'new') {
         this.quickPersonModalOpen = { isOpen: true, type: 'Seller' }
         this.form.seller_id = ''
       }
@@ -1108,6 +1082,37 @@ export default {
         digits = '55' + digits
       }
       return `https://wa.me/${digits}`
+    },
+
+    async exportContract() {
+      if (!this.editingBooking?.id) return
+
+      this.contractDownloading = true
+      try {
+        const { getHeaders } = useApi()
+        const requestUrl = `${window.location.origin}/api/v1/stays/${this.editingBooking.id}/contract`
+        const response = await axios.get(requestUrl, {
+          headers: getHeaders(),
+          responseType: 'blob'
+        })
+
+        const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+        const blobUrl = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        const guest = (this.editingBooking.guest_name || 'locacao').replace(/[\\/:*?"<>|]/g, '')
+
+        link.href = blobUrl
+        link.setAttribute('download', `Contrato-${guest}.docx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(blobUrl)
+      } catch (err) {
+        console.error('Error exporting contract:', err)
+        this.formErrors.general = 'Não foi possível exportar o contrato agora.'
+      } finally {
+        this.contractDownloading = false
+      }
     }
   }
 }

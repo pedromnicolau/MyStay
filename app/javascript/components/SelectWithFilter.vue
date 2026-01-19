@@ -62,14 +62,23 @@ export default {
     },
 
     filteredOptions() {
-      if (!this.filterText) {
-        return this.options
+      const opts = Array.isArray(this.options) ? this.options : []
+      const newOption = opts.find(o => o && String(o.value) === 'new')
+      const others = opts.filter(o => !o || String(o.value) !== 'new')
+
+      let filteredOthers = others
+      if (this.filterText) {
+        const searchLower = this.filterText.toLowerCase()
+        filteredOthers = others.filter(opt => {
+          const label = (opt.label || '').toString().toLowerCase()
+          const value = (opt.value || '').toString().toLowerCase()
+          return label.includes(searchLower) || value.includes(searchLower)
+        })
       }
-      const searchLower = this.filterText.toLowerCase()
-      return this.options.filter(opt => 
-        opt.label.toLowerCase().includes(searchLower) || 
-        opt.value.toLowerCase().includes(searchLower)
-      )
+
+      const result = []
+      if (newOption) result.push(newOption)
+      return result.concat(filteredOthers)
     }
   },
 

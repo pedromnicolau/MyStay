@@ -2,6 +2,7 @@ class Api::V1::StaysController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :authenticate_user!
   before_action :set_stay, only: [ :show, :update, :destroy ]
+  before_action :set_stay_with_associations, only: [ :contract ]
 
   def index
     stays = current_user.stays.order(created_at: :desc)
@@ -34,6 +35,20 @@ class Api::V1::StaysController < ApplicationController
     render json: { message: "Stay deleted successfully" }, status: :ok
   end
 
+  def contract
+    generator = ContractGenerator.new(@stay)
+    file = generator.generate
+
+    data = File.binread(file.path)
+    send_data data,
+              filename: "Contrato-#{@stay.guest_name.to_s.parameterize}.docx",
+              type: generator.content_type,
+              disposition: "attachment"
+  ensure
+    file&.close!
+    file&.unlink
+  end
+
   private
 
   def stay_params
@@ -47,6 +62,10 @@ class Api::V1::StaysController < ApplicationController
 
   def set_stay
     @stay = current_user.stays.find(params[:id])
+  end
+
+  def set_stay_with_associations
+    @stay = current_user.stays.includes(:customer, :property).find(params[:id])
   end
 
   def authenticate_user!

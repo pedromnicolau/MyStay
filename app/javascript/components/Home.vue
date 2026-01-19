@@ -2,14 +2,16 @@
   <div class="min-h-screen bg-gray-50">
     <Navbar :user="user" />
     
-    <Dashboard v-if="currentRoute === 'dashboard'" />
-    <Customers v-else-if="currentRoute === 'customers'" />
-    <Sellers v-else-if="currentRoute === 'sellers'" />
-    <Cleaners v-else-if="currentRoute === 'cleaners'" />
-    <Properties v-else-if="currentRoute === 'properties'" />
-    <Bookings v-else-if="currentRoute === 'bookings'" />
-    <Analysis v-else-if="currentRoute === 'analysis'" />
-    <Profile v-else-if="currentRoute === 'profile'" :user="user" />
+    <div class="pt-16">
+      <Dashboard v-if="currentRoute === 'dashboard'" />
+      <Customers v-else-if="currentRoute === 'customers'" />
+      <Sellers v-else-if="currentRoute === 'sellers'" />
+      <Cleaners v-else-if="currentRoute === 'cleaners'" />
+      <Properties v-else-if="currentRoute === 'properties'" />
+      <Bookings v-else-if="currentRoute === 'bookings'" />
+      <Analysis v-else-if="currentRoute === 'analysis'" />
+      <Profile v-else-if="currentRoute === 'profile'" :user="user" />
+    </div>
   </div>
 </template>
 

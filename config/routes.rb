@@ -7,7 +7,11 @@ Rails.application.routes.draw do
       post "/auth/login", to: "auth#login"
       get "/auth/verify", to: "auth#verify"
 
-      resources :stays
+      resources :stays do
+        member do
+          get :contract
+        end
+      end
       resources :people
       resources :properties
       get "/users/profile", to: "users#profile"
@@ -19,5 +23,7 @@ Rails.application.routes.draw do
   end
 
   root "pages#app"
-  get "/*path", to: "pages#app"
+
+  # Evita interceptar blobs do Active Storage pelo fallback do SPA
+  get "/*path", to: "pages#app", constraints: ->(req) { !req.path.start_with?("/rails/active_storage") }
 end

@@ -10,9 +10,37 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_19_051010) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_19_134345) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
 
   create_table "people", force: :cascade do |t|
     t.bigint "user_id", null: false
@@ -50,11 +78,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_051010) do
     t.string "zip"
     t.string "city"
     t.string "state"
-    t.string "image"
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "number"
+    t.integer "bedrooms", default: 0, null: false
+    t.integer "bathrooms", default: 0, null: false
+    t.integer "max_guests", default: 0, null: false
+    t.boolean "air_conditioning", default: false, null: false
+    t.boolean "wifi", default: false, null: false
+    t.boolean "tv", default: false, null: false
+    t.boolean "kitchen", default: false, null: false
+    t.boolean "parking_included", default: false, null: false
+    t.boolean "washing_machine", default: false, null: false
+    t.boolean "pool", default: false, null: false
+    t.boolean "barbecue_grill", default: false, null: false
+    t.boolean "balcony", default: false, null: false
+    t.boolean "pet_friendly", default: false, null: false
+    t.boolean "wheelchair_accessible", default: false, null: false
+    t.text "description"
     t.index ["active"], name: "index_properties_on_active"
     t.index ["city"], name: "index_properties_on_city"
     t.index ["user_id"], name: "index_properties_on_user_id"
@@ -117,6 +159,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_051010) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "people", "users"
   add_foreign_key "properties", "users"
   add_foreign_key "stays", "people", column: "customer_id"

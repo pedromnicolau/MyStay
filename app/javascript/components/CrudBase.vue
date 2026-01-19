@@ -337,22 +337,22 @@ export default {
         const cleanedForm = {}
         for (const key in this.formFields) {
           const value = this.form[key]
-          // Incluir o campo se não for undefined (null e strings vazias são válidos)
-          if (value !== undefined) {
-            cleanedForm[key] = value
+          if (value === undefined) continue
+
+          const normalizedValue = this.normalizeValueForPayload(key, value)
+          if (normalizedValue !== undefined) {
+            cleanedForm[key] = normalizedValue
           }
         }
 
+        const useFormData = this.formNeedsMultipart(cleanedForm)
+        const payload = useFormData ? this.buildFormData(resourceName, cleanedForm) : { [resourceName]: cleanedForm }
+        const requestConfig = useFormData ? { headers } : { headers }
+
         if (this.editingItem) {
-          await axios.put(`${baseEndpoint}/${this.editingItem.id}`, 
-            { [resourceName]: cleanedForm },
-            { headers }
-          )
+          await axios.put(`${baseEndpoint}/${this.editingItem.id}`, payload, requestConfig)
         } else {
-          await axios.post(baseEndpoint,
-            { [resourceName]: cleanedForm },
-            { headers }
-          )
+          await axios.post(baseEndpoint, payload, requestConfig)
         }
 
         this.closeModal()
@@ -362,6 +362,51 @@ export default {
       } finally {
         this.saving = false
       }
+    },
+
+    normalizeValueForPayload(key, value) {
+      if (key === 'attachments' && Array.isArray(value)) {
+        const fileOnly = value.filter(item => this.isFileLike(item))
+        return fileOnly.length > 0 ? fileOnly : undefined
+      }
+
+      return value
+    },
+
+    formNeedsMultipart(cleanedForm) {
+      return Object.values(cleanedForm).some(value => this.valueHasFile(value))
+    },
+
+    valueHasFile(value) {
+      if (this.isFileLike(value)) return true
+      if (Array.isArray(value)) {
+        return value.some(item => this.isFileLike(item))
+      }
+      return false
+    },
+
+    isFileLike(value) {
+      return (typeof File !== 'undefined' && value instanceof File) ||
+        (typeof Blob !== 'undefined' && value instanceof Blob)
+    },
+
+    buildFormData(resourceName, cleanedForm) {
+      const formData = new FormData()
+
+      for (const key in cleanedForm) {
+        const value = cleanedForm[key]
+
+        if (Array.isArray(value)) {
+          value.forEach(item => {
+            if (item === undefined || item === null) return
+            formData.append(`${resourceName}[${key}][]`, item)
+          })
+        } else if (value !== undefined) {
+          formData.append(`${resourceName}[${key}]`, value === null ? '' : value)
+        }
+      }
+
+      return formData
     },
 
     confirmDelete(item) {
