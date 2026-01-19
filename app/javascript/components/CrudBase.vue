@@ -113,21 +113,32 @@
             <slot name="form" :form="form" :errors="formErrors"></slot>
           </div>
 
-          <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 flex-shrink-0 bg-gray-50">
+          <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0 bg-gray-50">
             <button
+              v-if="editingItem"
               type="button"
-              @click="closeModal"
-              class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              @click="confirmDelete(editingItem)"
+              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
             >
-              Cancelar
+              Excluir
             </button>
-            <button
-              type="submit"
-              :disabled="saving"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-            >
-              {{ saving ? 'Salvando...' : 'Salvar' }}
-            </button>
+            <div v-else></div>
+            <div class="flex space-x-3">
+              <button
+                type="button"
+                @click="closeModal"
+                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                :disabled="saving"
+                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+              >
+                {{ saving ? 'Salvando...' : 'Salvar' }}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -136,21 +147,67 @@
     <div
       v-if="deleteConfirmItem"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="deleteConfirmItem = null"
+      @click.self="closeDeleteModal"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmar Exclusão</h3>
-        <p class="text-gray-600 mb-6">
-          Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
-        </p>
+        
+        <div v-if="!deleteError">
+          <p class="text-gray-600 mb-6">
+            Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
+          </p>
+        </div>
+
+        <div v-else class="mb-6">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div class="flex items-start">
+              <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+              <div class="flex-1">
+                <h4 class="text-red-800 font-semibold mb-1">{{ deleteError }}</h4>
+                <p class="text-red-700 text-sm">{{ deleteErrorMessage }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="relatedStays && relatedStays.length > 0" class="space-y-2">
+            <p class="text-sm font-semibold text-gray-700 mb-2">
+              Estadias relacionadas ({{ relatedStays.length }}):
+            </p>
+            <div class="bg-gray-50 rounded-lg divide-y divide-gray-200">
+              <div
+                v-for="stay in relatedStays"
+                :key="stay.id"
+                class="p-3 hover:bg-gray-100 transition cursor-pointer"
+                @click="goToStay(stay.id)"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900">{{ stay.guest_name }}</p>
+                    <p class="text-xs text-gray-600">Reserva: {{ stay.booking_reference }}</p>
+                    <p class="text-xs text-gray-500">
+                      Check-in: {{ formatDate(stay.check_in_date) }} | Check-out: {{ formatDate(stay.check_out_date) }}
+                    </p>
+                  </div>
+                  <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="flex justify-end space-x-3">
           <button
-            @click="deleteConfirmItem = null"
+            @click="closeDeleteModal"
             class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
           >
-            Cancelar
+            {{ deleteError ? 'Fechar' : 'Cancelar' }}
           </button>
           <button
+            v-if="!deleteError"
             @click="deleteItem"
             :disabled="deleting"
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
@@ -165,6 +222,7 @@
 
 <script>
 import axios from 'axios'
+import { navigateTo } from '../router.js'
 
 export default {
   props: {
@@ -201,7 +259,10 @@ export default {
       formErrors: {},
       saving: false,
       deleteConfirmItem: null,
-      deleting: false
+      deleting: false,
+      deleteError: null,
+      deleteErrorMessage: null,
+      relatedStays: []
     }
   },
 
@@ -301,10 +362,21 @@ export default {
 
     confirmDelete(item) {
       this.deleteConfirmItem = item
+      this.deleteError = null
+      this.deleteErrorMessage = null
+      this.relatedStays = []
+    },
+
+    closeDeleteModal() {
+      this.deleteConfirmItem = null
+      this.deleteError = null
+      this.deleteErrorMessage = null
+      this.relatedStays = []
     },
 
     async deleteItem() {
       this.deleting = true
+      this.error = null // Limpa erro anterior
 
       try {
         const token = localStorage.getItem('token')
@@ -313,14 +385,36 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         })
 
-        this.deleteConfirmItem = null
+        this.closeDeleteModal()
+        this.closeModal()
         this.loadItems()
       } catch (err) {
-        this.error = err.response?.data?.error || 'Erro ao excluir'
-        this.deleteConfirmItem = null
+        console.log('Erro ao excluir:', err.response)
+        // Verifica se é um erro de violação de chave estrangeira
+        if (err.response?.status === 409) {
+          console.log('Erro 409 detectado:', err.response.data)
+          this.deleteError = err.response.data.error
+          this.deleteErrorMessage = err.response.data.message
+          this.relatedStays = err.response.data.related_stays || []
+          // Não fecha o modal, apenas exibe o erro dentro dele
+        } else {
+          this.error = err.response?.data?.error || 'Erro ao excluir'
+          this.closeDeleteModal()
+        }
       } finally {
         this.deleting = false
       }
+    },
+
+    goToStay(stayId) {
+      this.closeDeleteModal()
+      navigateTo('bookings', { stayId })
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('pt-BR')
     },
 
     getResourceName() {

@@ -29,3 +29,15 @@
 
 en:
   hello: "Hello world"
+  auth:
+    sign_in: "Sign In"
+    sign_up: "Sign Up"
+    email_address: "Email Address"
+    password: "Password"
+    first_name: "First Name"
+    last_name: "Last Name"
+    phone: "Phone"
+    loading: "Loading..."
+    create_account: "Create Account"
+    login_failed: "Login failed. Please try again."
+    registration_failed: "Registration failed. Please try again."

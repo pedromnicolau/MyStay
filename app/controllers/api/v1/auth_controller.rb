@@ -55,7 +55,6 @@ class Api::V1::AuthController < ApplicationController
       :first_name,
       :last_name,
       :phone,
-      :country,
       :city,
       :state,
       :zip,
@@ -92,7 +91,6 @@ class Api::V1::AuthController < ApplicationController
       address: user.address,
       number: user.number,
       neighborhood: user.neighborhood,
-      country: user.country,
       city: user.city,
       state: user.state,
       profile_image: user.profile_image

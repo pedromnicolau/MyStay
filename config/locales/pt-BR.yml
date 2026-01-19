@@ -1,4 +1,16 @@
 pt-BR:
+  auth:
+    sign_in: "Entrar"
+    sign_up: "Cadastro"
+    email_address: "Endereço de E-mail"
+    password: "Senha"
+    first_name: "Nome"
+    last_name: "Sobrenome"
+    phone: "Telefone"
+    loading: "Carregando..."
+    create_account: "Criar Conta"
+    login_failed: "Falha no login. Tente novamente."
+    registration_failed: "Falha no cadastro. Tente novamente."
   activerecord:
     errors:
       messages:

@@ -411,8 +411,10 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">Corretor</label>
               <select
                 v-model.number="form.seller_id"
+                @change="handleSellerChange"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
+                <option value="new" class="font-semibold text-indigo-600">+ Novo Corretor</option>
                 <option value="">Selecione um corretor</option>
                 <option v-for="seller in sellers" :key="seller.id" :value="seller.id">
                   {{ seller.name }}
@@ -477,469 +479,80 @@
           </div>
         </form>
 
-        <div class="px-6 py-4 border-t border-gray-200 flex-shrink-0 bg-white flex justify-end space-x-3 relative">
+        <div class="px-6 py-4 border-t border-gray-200 flex-shrink-0 bg-white flex justify-between items-center relative">
           <div v-if="formErrors.general" class="absolute left-6 -top-12 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg w-[calc(100%-3rem)]">
             {{ formErrors.general }}
           </div>
           <button
+            v-if="editingBooking"
             type="button"
-            @click="closeModal"
-            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+            @click="deleteConfirmBooking = editingBooking"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
           >
-            Cancelar
+            Excluir
           </button>
-          <button
-            type="button"
-            @click="saveBooking"
-            :disabled="saving"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-          >
-            {{ saving ? 'Salvando...' : 'Salvar' }}
-          </button>
+          <div v-else></div>
+          <div class="flex space-x-3">
+            <button
+              type="button"
+              @click="closeModal"
+              class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              @click="saveBooking"
+              :disabled="saving"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+            >
+              {{ saving ? 'Salvando...' : 'Salvar' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div
-      v-if="deleteConfirmBooking"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="deleteConfirmBooking = null"
-    >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Confirmar Exclusão</h3>
-        <p class="text-gray-600 mb-6">
-          Tem certeza que deseja excluir esta locação? Esta ação não pode ser desfeita.
-        </p>
-        <div class="flex justify-end space-x-3">
-          <button
-            @click="deleteConfirmBooking = null"
-            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-          >
-            Cancelar
-          </button>
-          <button
-            @click="deleteBooking"
-            :disabled="deleting"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-          >
-            {{ deleting ? 'Excluindo...' : 'Excluir' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmationModal
+      :isOpen="!!deleteConfirmBooking"
+      title="Confirmar Exclusão"
+      message="Tem certeza que deseja excluir esta locação? Esta ação não pode ser desfeita."
+      :loading="deleting"
+      @confirm="deleteBooking"
+      @cancel="deleteConfirmBooking = null"
+    />
 
-    <div
-      v-if="isQuickCustomerModalOpen"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeQuickCustomerModal"
-    >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-          <h2 class="text-xl font-semibold text-gray-900">Novo Hóspede</h2>
-          <button @click="closeQuickCustomerModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form @submit.prevent="saveQuickCustomer" class="px-6 py-4 overflow-y-auto flex-1 flex flex-col">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-              <input
-                v-model="quickCustomerForm.name"
-                type="text"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-              <input
-                v-model="quickCustomerForm.email"
-                type="email"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
-              <input
-                v-model="quickCustomerForm.phone"
-                @input="applyPhoneMask"
-                type="tel"
-                required
-                placeholder="(00) 00000-0000"
-                maxlength="15"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
-              <input
-                v-model="quickCustomerForm.cpf"
-                @input="applyCpfMask"
-                type="text"
-                required
-                placeholder="000.000.000-00"
-                maxlength="14"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">RG</label>
-              <input
-                v-model="quickCustomerForm.rg"
-                @input="applyRgMask"
-                type="text"
-                maxlength="12"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Profissão</label>
-              <input
-                v-model="quickCustomerForm.profession"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Estado Civil</label>
-              <select
-                v-model="quickCustomerForm.marital_status"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Selecione</option>
-                <option value="Solteiro(a)">Solteiro(a)</option>
-                <option value="Casado(a)">Casado(a)</option>
-                <option value="Divorciado(a)">Divorciado(a)</option>
-                <option value="Viúvo(a)">Viúvo(a)</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
-              <input
-                v-model="quickCustomerForm.zip"
-                @input="applyZipMask"
-                type="text"
-                placeholder="00000-000"
-                maxlength="9"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-              <input
-                v-model="quickCustomerForm.address"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Número</label>
-              <input
-                v-model="quickCustomerForm.number"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
-              <input
-                v-model="quickCustomerForm.neighborhood"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-              <input
-                v-model="quickCustomerForm.city"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select
-                v-model="quickCustomerForm.state"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Selecione</option>
-                <option v-for="state in stateOptions" :key="state.value" :value="state.value">
-                  {{ state.label }}
-                </option>
-              </select>
-            </div>
-
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-              <textarea
-                v-model="quickCustomerForm.note"
-                rows="3"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              ></textarea>
-            </div>
-
-            <div class="md:col-span-2">
-              <label class="flex items-center space-x-2">
-                <input
-                  v-model="quickCustomerForm.blocked"
-                  type="checkbox"
-                  class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                />
-                <span class="text-sm font-medium text-gray-700">Cliente bloqueado</span>
-              </label>
-            </div>
-          </div>
-        </form>
-
-        <div class="px-6 py-4 border-t border-gray-200 flex-shrink-0 bg-white flex justify-end space-x-3 relative">
-          <div v-if="quickCustomerErrors.general" class="absolute left-6 -top-12 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg w-[calc(100%-3rem)]">
-            {{ quickCustomerErrors.general }}
-          </div>
-          <button
-            type="button"
-            @click="closeQuickCustomerModal"
-            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="saveQuickCustomer"
-            :disabled="savingQuickCustomer"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-          >
-            {{ savingQuickCustomer ? 'Salvando...' : 'Salvar' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="isQuickCleanerModalOpen"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeQuickCleanerModal"
-    >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-          <h2 class="text-xl font-semibold text-gray-900">Nova Faxineira</h2>
-          <button @click="closeQuickCleanerModal" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form @submit.prevent="saveQuickCleaner" class="px-6 py-4 overflow-y-auto flex-1 flex flex-col">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-              <input
-                v-model="quickCleanerForm.name"
-                type="text"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-              <input
-                v-model="quickCleanerForm.email"
-                type="email"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
-              <input
-                v-model="quickCleanerForm.phone"
-                @input="applyPhoneMaskCleaner"
-                type="tel"
-                required
-                placeholder="(00) 00000-0000"
-                maxlength="15"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
-              <input
-                v-model="quickCleanerForm.cpf"
-                @input="applyCpfMaskCleaner"
-                type="text"
-                required
-                placeholder="000.000.000-00"
-                maxlength="14"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">RG</label>
-              <input
-                v-model="quickCleanerForm.rg"
-                @input="applyRgMaskCleaner"
-                type="text"
-                maxlength="12"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Profissão</label>
-              <input
-                v-model="quickCleanerForm.profession"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Estado Civil</label>
-              <select
-                v-model="quickCleanerForm.marital_status"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Selecione</option>
-                <option value="Solteiro(a)">Solteiro(a)</option>
-                <option value="Casado(a)">Casado(a)</option>
-                <option value="Divorciado(a)">Divorciado(a)</option>
-                <option value="Viúvo(a)">Viúvo(a)</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
-              <input
-                v-model="quickCleanerForm.zip"
-                @input="applyZipMaskCleaner"
-                type="text"
-                placeholder="00000-000"
-                maxlength="9"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-              <input
-                v-model="quickCleanerForm.address"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Número</label>
-              <input
-                v-model="quickCleanerForm.number"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
-              <input
-                v-model="quickCleanerForm.neighborhood"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-              <input
-                v-model="quickCleanerForm.city"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select
-                v-model="quickCleanerForm.state"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Selecione</option>
-                <option v-for="state in stateOptions" :key="state.value" :value="state.value">
-                  {{ state.label }}
-                </option>
-              </select>
-            </div>
-
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-              <textarea
-                v-model="quickCleanerForm.note"
-                rows="3"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              ></textarea>
-            </div>
-
-            <div class="md:col-span-2">
-              <label class="flex items-center space-x-2">
-                <input
-                  v-model="quickCleanerForm.blocked"
-                  type="checkbox"
-                  class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                />
-                <span class="text-sm font-medium text-gray-700">Faxineira bloqueada</span>
-              </label>
-            </div>
-          </div>
-        </form>
-
-        <div class="px-6 py-4 border-t border-gray-200 flex-shrink-0 bg-white flex justify-end space-x-3 relative">
-          <div v-if="quickCleanerErrors.general" class="absolute left-6 -top-12 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg w-[calc(100%-3rem)]">
-            {{ quickCleanerErrors.general }}
-          </div>
-          <button
-            type="button"
-            @click="closeQuickCleanerModal"
-            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="saveQuickCleaner"
-            :disabled="savingQuickCleaner"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-          >
-            {{ savingQuickCleaner ? 'Salvando...' : 'Salvar' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <QuickPersonModal
+      :isOpen="quickPersonModalOpen.isOpen"
+      :personType="quickPersonModalOpen.type"
+      @save="handleQuickPersonSave"
+      @close="closeQuickPersonModal"
+    />
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+import { router } from '../router.js'
+import QuickPersonModal from './QuickPersonModal.vue'
+import ConfirmationModal from './ConfirmationModal.vue'
+import { useInputMasks } from '../composables/useInputMasks.js'
+import { useApi } from '../composables/useApi.js'
+import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
 
 export default {
+  components: {
+    QuickPersonModal,
+    ConfirmationModal
+  },
   data() {
+    const { applyPhoneMask, applyCpfMask, applyRgMask, applyZipMask, fetchAddressByCep } = useInputMasks()
+
     return {
+      applyPhoneMask,
+      applyCpfMask,
+      applyRgMask,
+      applyZipMask,
+      fetchAddressByCep,
       currentMonth: new Date().getMonth(),
       currentYear: new Date().getFullYear(),
       bookings: [],
@@ -957,78 +570,11 @@ export default {
       deleting: false,
       formErrors: {},
       form: this.getEmptyForm(),
-      isQuickCustomerModalOpen: false,
-      savingQuickCustomer: false,
-      quickCustomerForm: {
-        name: '',
-        email: '',
-        phone: '',
-        cpf: '',
-        rg: '',
-        profession: '',
-        marital_status: '',
-        zip: '',
-        address: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        note: '',
-        blocked: false,
-        type: 'Customer'
+      quickPersonModalOpen: {
+        isOpen: false,
+        type: null
       },
-      quickCustomerErrors: {},
-      isQuickCleanerModalOpen: false,
-      savingQuickCleaner: false,
-      quickCleanerForm: {
-        name: '',
-        email: '',
-        phone: '',
-        cpf: '',
-        rg: '',
-        profession: '',
-        marital_status: '',
-        zip: '',
-        address: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        note: '',
-        blocked: false,
-        type: 'Cleaner'
-      },
-      quickCleanerErrors: {},
-      stateOptions: [
-        { value: 'AC', label: 'Acre' },
-        { value: 'AL', label: 'Alagoas' },
-        { value: 'AP', label: 'Amapá' },
-        { value: 'AM', label: 'Amazonas' },
-        { value: 'BA', label: 'Bahia' },
-        { value: 'CE', label: 'Ceará' },
-        { value: 'DF', label: 'Distrito Federal' },
-        { value: 'ES', label: 'Espírito Santo' },
-        { value: 'GO', label: 'Goiás' },
-        { value: 'MA', label: 'Maranhão' },
-        { value: 'MT', label: 'Mato Grosso' },
-        { value: 'MS', label: 'Mato Grosso do Sul' },
-        { value: 'MG', label: 'Minas Gerais' },
-        { value: 'PA', label: 'Pará' },
-        { value: 'PB', label: 'Paraíba' },
-        { value: 'PR', label: 'Paraná' },
-        { value: 'PE', label: 'Pernambuco' },
-        { value: 'PI', label: 'Piauí' },
-        { value: 'RJ', label: 'Rio de Janeiro' },
-        { value: 'RN', label: 'Rio Grande do Norte' },
-        { value: 'RS', label: 'Rio Grande do Sul' },
-        { value: 'RO', label: 'Rondônia' },
-        { value: 'RR', label: 'Roraima' },
-        { value: 'SC', label: 'Santa Catarina' },
-        { value: 'SP', label: 'São Paulo' },
-        { value: 'SE', label: 'Sergipe' },
-        { value: 'TO', label: 'Tocantins'
-        }
-      ],
+      stateOptions: BRAZILIAN_STATES,
       monthNames: [
         'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -1038,6 +584,10 @@ export default {
   },
 
   computed: {
+    stayIdToEdit() {
+      return router.params?.stayId
+    },
+
     calendarDays() {
       const firstDay = new Date(this.currentYear, this.currentMonth, 1)
       const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0)
@@ -1072,8 +622,31 @@ export default {
     }
   },
 
+  watch: {
+    stayIdToEdit(newVal) {
+      if (newVal) {
+        const booking = this.bookings.find(b => b.id === newVal)
+        if (booking) {
+          this.editBooking(booking)
+          // Limpar o parâmetro para próximas navegações
+          router.params.stayId = null
+        }
+      }
+    }
+  },
+
   mounted() {
     this.loadData()
+    // Se já temos um stayId ao montar, tentar editar
+    if (this.stayIdToEdit) {
+      setTimeout(() => {
+        const booking = this.bookings.find(b => b.id === this.stayIdToEdit)
+        if (booking) {
+          this.editBooking(booking)
+          router.params.stayId = null
+        }
+      }, 500)
+    }
   },
 
   methods: {
@@ -1107,67 +680,59 @@ export default {
     async loadData() {
       this.loading = true
       try {
-        await Promise.all([this.loadBookings(), this.loadCustomers(), this.loadProperties(), this.loadSellers(), this.loadCleaners()])
+        const { getStays, getPeople, getProperties } = useApi()
+        await Promise.all([
+          this.loadBookings(getStays),
+          this.loadCustomers(getPeople),
+          this.loadProperties(getProperties),
+          this.loadSellers(getPeople),
+          this.loadCleaners(getPeople)
+        ])
       } finally {
         this.loading = false
       }
     },
 
-    async loadBookings() {
+    async loadBookings(apiMethod) {
       try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get('/api/v1/stays', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        this.bookings = response.data
+        const { data, error } = await apiMethod()
+        if (!error) this.bookings = data
       } catch (err) {
         console.error('Error loading bookings:', err)
       }
     },
 
-    async loadCustomers() {
+    async loadCustomers(apiMethod) {
       try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get('/api/v1/people?type=Customer', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        this.customers = response.data
+        const { data, error } = await apiMethod('Customer')
+        if (!error) this.customers = data
       } catch (err) {
         console.error('Error loading customers:', err)
       }
     },
 
-    async loadProperties() {
+    async loadProperties(apiMethod) {
       try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get('/api/v1/properties', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        this.properties = response.data
+        const { data, error } = await apiMethod()
+        if (!error) this.properties = data
       } catch (err) {
         console.error('Error loading properties:', err)
       }
     },
 
-    async loadSellers() {
+    async loadSellers(apiMethod) {
       try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get('/api/v1/people?type=Seller', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        this.sellers = response.data
+        const { data, error } = await apiMethod('Seller')
+        if (!error) this.sellers = data
       } catch (err) {
         console.error('Error loading sellers:', err)
       }
     },
 
-    async loadCleaners() {
+    async loadCleaners(apiMethod) {
       try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get('/api/v1/people?type=Cleaner', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        this.cleaners = response.data
+        const { data, error } = await apiMethod('Cleaner')
+        if (!error) this.cleaners = data
       } catch (err) {
         console.error('Error loading cleaners:', err)
       }
@@ -1307,8 +872,7 @@ export default {
       this.formErrors = {}
 
       try {
-        const token = localStorage.getItem('token')
-        const headers = { Authorization: `Bearer ${token}` }
+        const { post, put } = useApi()
         const isCleaning = this.entryType === 'cleaning'
         
         let selectedPerson
@@ -1328,20 +892,20 @@ export default {
           total_price: this.form.final_amount || this.form.total_price
         }
 
+        let result
         if (this.editingBooking) {
-          await axios.put(`/api/v1/stays/${this.editingBooking.id}`, 
-            { stay: payload },
-            { headers }
-          )
+          result = await put(`/api/v1/stays/${this.editingBooking.id}`, { stay: payload })
         } else {
-          await axios.post('/api/v1/stays',
-            { stay: payload },
-            { headers }
-          )
+          result = await post('/api/v1/stays', { stay: payload })
+        }
+
+        if (result.error) {
+          this.formErrors.general = result.error.response?.data?.errors?.join(', ') || 'Erro ao salvar locação'
+          return
         }
 
         this.closeModal()
-        this.loadBookings()
+        this.loadBookings(useApi().getStays)
       } catch (err) {
         this.formErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao salvar locação'
       } finally {
@@ -1355,345 +919,55 @@ export default {
 
     handleCustomerChange(event) {
       if (event.target.value === 'new') {
-        this.openQuickCustomerModal()
+        this.quickPersonModalOpen = { isOpen: true, type: 'Customer' }
         this.form.customer_id = ''
       }
     },
 
     handleCleanerChange(event) {
       if (event.target.value === 'new') {
-        this.openQuickCleanerModal()
+        this.quickPersonModalOpen = { isOpen: true, type: 'Cleaner' }
         this.form.customer_id = ''
       }
     },
 
-    openQuickCustomerModal() {
-      this.quickCustomerForm = {
-        name: '',
-        email: '',
-        phone: '',
-        cpf: '',
-        rg: '',
-        profession: '',
-        marital_status: '',
-        zip: '',
-        address: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        note: '',
-        blocked: false,
-        type: 'Customer'
-      }
-      this.quickCustomerErrors = {}
-      this.isQuickCustomerModalOpen = true
-    },
-
-    closeQuickCustomerModal() {
-      this.isQuickCustomerModalOpen = false
-      this.quickCustomerForm = {
-        name: '',
-        email: '',
-        phone: '',
-        cpf: '',
-        rg: '',
-        profession: '',
-        marital_status: '',
-        zip: '',
-        address: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        note: '',
-        blocked: false,
-        type: 'Customer'
-      }
-      this.quickCustomerErrors = {}
-    },
-
-    applyPhoneMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length <= 10) {
-        if (value.length > 6) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6, 10)}`
-        } else if (value.length > 2) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}`
-        } else if (value.length > 0) {
-          formattedValue = `(${value.slice(0, 2)}`
-        }
-      } else {
-        formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7, 11)}`
-      }
-      
-      event.target.value = formattedValue
-      this.quickCustomerForm.phone = formattedValue
-    },
-
-    applyCpfMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 9) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9, 11)}`
-      } else if (value.length > 6) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}`
-      } else if (value.length > 3) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.quickCustomerForm.cpf = formattedValue
-    },
-
-    applyRgMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 8) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}-${value.slice(8, 9)}`
-      } else if (value.length > 5) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5)}`
-      } else if (value.length > 2) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.quickCustomerForm.rg = formattedValue
-    },
-
-    applyZipMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 5) {
-        formattedValue = `${value.slice(0, 5)}-${value.slice(5, 8)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.quickCustomerForm.zip = formattedValue
-
-      if (value.length === 8) {
-        this.fetchAddressByCep(value)
+    handleSellerChange(event) {
+      if (event.target.value === 'new') {
+        this.quickPersonModalOpen = { isOpen: true, type: 'Seller' }
+        this.form.seller_id = ''
       }
     },
 
-    async fetchAddressByCep(cep) {
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
-        const data = await response.json()
-        
-        if (data.logradouro) {
-          this.quickCustomerForm.address = data.logradouro
-          this.quickCustomerForm.neighborhood = data.bairro
-          this.quickCustomerForm.city = data.localidade
-          this.quickCustomerForm.state = data.uf
-        }
-      } catch (error) {
-        console.error('Erro ao buscar CEP:', error)
+    handleQuickPersonSave(person) {
+      if (this.quickPersonModalOpen.type === 'Customer') {
+        this.form.customer_id = person.id
+        this.loadCustomers(useApi().getPeople)
+      } else if (this.quickPersonModalOpen.type === 'Cleaner') {
+        this.form.customer_id = person.id
+        this.loadCleaners(useApi().getPeople)
+      } else if (this.quickPersonModalOpen.type === 'Seller') {
+        this.form.seller_id = person.id
+        this.loadSellers(useApi().getPeople)
       }
+      this.closeQuickPersonModal()
     },
 
-    async saveQuickCustomer() {
-      this.savingQuickCustomer = true
-      this.quickCustomerErrors = {}
-
-      try {
-        const token = localStorage.getItem('token')
-        const headers = { Authorization: `Bearer ${token}` }
-        const response = await axios.post('/api/v1/people',
-          { person: this.quickCustomerForm },
-          { headers }
-        )
-
-        await this.loadCustomers()
-        this.form.customer_id = response.data.id
-        this.closeQuickCustomerModal()
-      } catch (err) {
-        this.quickCustomerErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao criar hóspede'
-      } finally {
-        this.savingQuickCustomer = false
-      }
-    },
-
-    openQuickCleanerModal() {
-      this.quickCleanerForm = {
-        name: '',
-        email: '',
-        phone: '',
-        cpf: '',
-        rg: '',
-        profession: '',
-        marital_status: '',
-        zip: '',
-        address: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        note: '',
-        blocked: false,
-        type: 'Cleaner'
-      }
-      this.quickCleanerErrors = {}
-      this.isQuickCleanerModalOpen = true
-    },
-
-    closeQuickCleanerModal() {
-      this.isQuickCleanerModalOpen = false
-      this.quickCleanerForm = {
-        name: '',
-        email: '',
-        phone: '',
-        cpf: '',
-        rg: '',
-        profession: '',
-        marital_status: '',
-        zip: '',
-        address: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        note: '',
-        blocked: false,
-        type: 'Cleaner'
-      }
-      this.quickCleanerErrors = {}
-    },
-
-    applyPhoneMaskCleaner(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length <= 10) {
-        if (value.length > 6) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6, 10)}`
-        } else if (value.length > 2) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}`
-        } else if (value.length > 0) {
-          formattedValue = `(${value.slice(0, 2)}`
-        }
-      } else {
-        formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7, 11)}`
-      }
-      
-      event.target.value = formattedValue
-      this.quickCleanerForm.phone = formattedValue
-    },
-
-    applyCpfMaskCleaner(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 9) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9, 11)}`
-      } else if (value.length > 6) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}`
-      } else if (value.length > 3) {
-        formattedValue = `${value.slice(0, 3)}.${value.slice(3, 6)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.quickCleanerForm.cpf = formattedValue
-    },
-
-    applyRgMaskCleaner(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 8) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}-${value.slice(8, 9)}`
-      } else if (value.length > 5) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5)}`
-      } else if (value.length > 2) {
-        formattedValue = `${value.slice(0, 2)}.${value.slice(2)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.quickCleanerForm.rg = formattedValue
-    },
-
-    applyZipMaskCleaner(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-      
-      if (value.length > 5) {
-        formattedValue = `${value.slice(0, 5)}-${value.slice(5, 8)}`
-      } else {
-        formattedValue = value
-      }
-      
-      event.target.value = formattedValue
-      this.quickCleanerForm.zip = formattedValue
-
-      if (value.length === 8) {
-        this.fetchAddressByCepCleaner(value)
-      }
-    },
-
-    async fetchAddressByCepCleaner(cep) {
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
-        const data = await response.json()
-        
-        if (data.logradouro) {
-          this.quickCleanerForm.address = data.logradouro
-          this.quickCleanerForm.neighborhood = data.bairro
-          this.quickCleanerForm.city = data.localidade
-          this.quickCleanerForm.state = data.uf
-        }
-      } catch (error) {
-        console.error('Erro ao buscar CEP:', error)
-      }
-    },
-
-    async saveQuickCleaner() {
-      this.savingQuickCleaner = true
-      this.quickCleanerErrors = {}
-
-      try {
-        const token = localStorage.getItem('token')
-        const headers = { Authorization: `Bearer ${token}` }
-        const response = await axios.post('/api/v1/people',
-          { person: this.quickCleanerForm },
-          { headers }
-        )
-
-        await this.loadCleaners()
-        this.form.customer_id = response.data.id
-        this.closeQuickCleanerModal()
-      } catch (err) {
-        this.quickCleanerErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao criar faxineira'
-      } finally {
-        this.savingQuickCleaner = false
-      }
+    closeQuickPersonModal() {
+      this.quickPersonModalOpen = { isOpen: false, type: null }
     },
 
     async deleteBooking() {
       this.deleting = true
 
       try {
-        const token = localStorage.getItem('token')
-        await axios.delete(`/api/v1/stays/${this.deleteConfirmBooking.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const { delete: deleteApi } = useApi()
+        const { error } = await deleteApi(`/api/v1/stays/${this.deleteConfirmBooking.id}`)
 
-        this.deleteConfirmBooking = null
-        this.loadBookings()
+        if (!error) {
+          this.deleteConfirmBooking = null
+          this.closeModal()
+          this.loadBookings(useApi().getStays)
+        }
       } catch (err) {
         console.error('Error deleting booking:', err)
         this.deleteConfirmBooking = null

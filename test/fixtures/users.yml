@@ -6,7 +6,6 @@ one:
   first_name: MyString
   last_name: MyString
   phone: MyString
-  country: MyString
   city: MyString
   profile_image: MyString
   created_at: 2026-01-18 17:34:41
@@ -18,8 +17,3 @@ two:
   first_name: MyString
   last_name: MyString
   phone: MyString
-  country: MyString
-  city: MyString
-  profile_image: MyString
-  created_at: 2026-01-18 17:34:41
-  updated_at: 2026-01-18 17:34:41

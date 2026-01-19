@@ -87,15 +87,6 @@
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">País</label>
-                <input
-                  v-model="form.country"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
                 <input
                   v-model="form.address"
@@ -218,8 +209,10 @@
 </template>
 
 <script>
-import axios from 'axios'
 import { navigateTo } from '../router.js'
+import { useApi } from '../composables/useApi.js'
+import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
+import { useInputMasks } from '../composables/useInputMasks.js'
 
 export default {
   props: {
@@ -241,8 +234,6 @@ export default {
         number: '',
         neighborhood: '',
         city: '',
-        country: '',
-        country: '',
         state: '',
         current_password: '',
         password: '',
@@ -251,35 +242,7 @@ export default {
       saving: false,
       successMessage: '',
       errors: {},
-      stateOptions: [
-        { value: 'AC', label: 'Acre' },
-        { value: 'AL', label: 'Alagoas' },
-        { value: 'AP', label: 'Amapá' },
-        { value: 'AM', label: 'Amazonas' },
-        { value: 'BA', label: 'Bahia' },
-        { value: 'CE', label: 'Ceará' },
-        { value: 'DF', label: 'Distrito Federal' },
-        { value: 'ES', label: 'Espírito Santo' },
-        { value: 'GO', label: 'Goiás' },
-        { value: 'MA', label: 'Maranhão' },
-        { value: 'MT', label: 'Mato Grosso' },
-        { value: 'MS', label: 'Mato Grosso do Sul' },
-        { value: 'MG', label: 'Minas Gerais' },
-        { value: 'PA', label: 'Pará' },
-        { value: 'PB', label: 'Paraíba' },
-        { value: 'PR', label: 'Paraná' },
-        { value: 'PE', label: 'Pernambuco' },
-        { value: 'PI', label: 'Piauí' },
-        { value: 'RJ', label: 'Rio de Janeiro' },
-        { value: 'RN', label: 'Rio Grande do Norte' },
-        { value: 'RS', label: 'Rio Grande do Sul' },
-        { value: 'RO', label: 'Rondônia' },
-        { value: 'RR', label: 'Roraima' },
-        { value: 'SC', label: 'Santa Catarina' },
-        { value: 'SP', label: 'São Paulo' },
-        { value: 'SE', label: 'Sergipe' },
-        { value: 'TO', label: 'Tocantins' }
-      ]
+      stateOptions: BRAZILIAN_STATES
     }
   },
 
@@ -300,7 +263,6 @@ export default {
         number: this.user.number || '',
         neighborhood: this.user.neighborhood || '',
         city: this.user.city || '',
-        country: this.user.country || '',
         state: this.user.state || '',
         current_password: '',
         password: '',
@@ -310,12 +272,12 @@ export default {
 
     async fetchProfile() {
       try {
-        const token = localStorage.getItem('token')
-        if (!token) return
-        const response = await axios.get('/api/v1/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const userData = response.data
+        const { get } = useApi()
+        const { data, error } = await get('/api/v1/me')
+        
+        if (error) return
+        
+        const userData = data
         this.form = {
           first_name: userData.first_name || '',
           last_name: userData.last_name || '',
@@ -326,7 +288,6 @@ export default {
           number: userData.number || '',
           neighborhood: userData.neighborhood || '',
           city: userData.city || '',
-          country: userData.country || '',
           state: userData.state || '',
           current_password: '',
           password: '',
@@ -345,7 +306,7 @@ export default {
       this.successMessage = ''
 
       try {
-        const token = localStorage.getItem('token')
+        const { put } = useApi()
         const payload = { ...this.form }
 
         // Remove senhas vazias do payload
@@ -359,72 +320,33 @@ export default {
           delete payload.password_confirmation
         }
 
-        const response = await axios.put(
-          '/api/v1/me',
-          { user: payload },
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        )
+        const { data, error } = await put('/api/v1/me', { user: payload })
 
-        // Atualiza o usuário no localStorage
-        localStorage.setItem('user', JSON.stringify(response.data))
-
-        this.successMessage = 'Perfil atualizado com sucesso!'
-        setTimeout(() => {
-          this.successMessage = ''
-        }, 3000)
-      } catch (err) {
-        if (err.response?.data?.errors) {
-          const errorList = err.response.data.errors
+        if (error) {
+          const errorList = error.response?.data?.errors
           if (Array.isArray(errorList)) {
             this.errors.general = errorList.join(', ')
           } else if (typeof errorList === 'object') {
             const firstKey = Object.keys(errorList)[0]
             this.errors.general = errorList[firstKey]?.[0] || 'Erro ao salvar perfil'
           } else {
-            this.errors.general = errorList
+            this.errors.general = errorList || 'Erro ao salvar perfil'
           }
-        } else {
-          this.errors.general = 'Erro ao salvar perfil'
+          return
         }
+
+        // Atualiza o usuário no localStorage
+        localStorage.setItem('user', JSON.stringify(data))
+
+        this.successMessage = 'Perfil atualizado com sucesso!'
+        setTimeout(() => {
+          this.successMessage = ''
+        }, 3000)
+      } catch (err) {
+        this.errors.general = 'Erro ao salvar perfil'
       } finally {
         this.saving = false
       }
-    },
-
-    applyPhoneMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-
-      if (value.length <= 10) {
-        if (value.length > 6) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6, 10)}`
-        } else if (value.length > 2) {
-          formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 6)}`
-        } else if (value.length > 0) {
-          formattedValue = `(${value.slice(0, 2)}`
-        }
-      } else {
-        formattedValue = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7, 11)}`
-      }
-
-      event.target.value = formattedValue
-      this.form.phone = formattedValue
-    },
-
-    applyZipMask(event) {
-      let value = event.target.value.replace(/\D/g, '')
-      let formattedValue = ''
-
-      if (value.length > 5) {
-        formattedValue = `${value.slice(0, 5)}-${value.slice(5, 8)}`
-      } else {
-        formattedValue = value
-      }
-
-      event.target.value = formattedValue
-      this.form.zip = formattedValue
     },
 
     goBack() {
