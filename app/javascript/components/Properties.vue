@@ -19,16 +19,6 @@
           />
         </div>
 
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-          <textarea
-            v-model="form.description"
-            placeholder="Descreva o imóvel com detalhes... (ex: Casa confortável à beira-mar, com vista para o oceano, 3 quartos...)"
-            rows="4"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-          />
-        </div>
-
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
           <input
@@ -276,6 +266,16 @@
               </div>
             </label>
           </div>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+          <textarea
+            v-model="form.description"
+            placeholder="Descreva o imóvel com detalhes... (ex: Casa confortável à beira-mar, com vista para o oceano, 3 quartos...)"
+            rows="4"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          />
         </div>
 
         <div class="md:col-span-2">
@@ -617,24 +617,46 @@ export default {
       if (fromType === null || fromIdx === null) return
       if (fromType === toType && fromIdx === toIdx) return
 
+      // Trabalhar diretamente com form.attachments
+      const allAttachments = form.attachments || []
+      
+      // Encontrar índices reais em form.attachments
       const existing = this.existingAttachments(form)
       const newFiles = this.newAttachments(form)
-
-      // Ambos no mesmo tipo (existing ou new)
-      if (fromType === toType) {
-        const arr = fromType === 'existing' ? existing : newFiles
-        const [item] = arr.splice(fromIdx, 1)
-        arr.splice(toIdx, 0, item)
+      
+      // Obter o item que será movido
+      let draggedItem = null
+      if (fromType === 'existing') {
+        draggedItem = existing[fromIdx]
       } else {
-        // Movimento entre tipos (existing ↔ new)
-        if (fromType === 'existing') {
-          const [item] = existing.splice(fromIdx, 1)
-          newFiles.splice(toIdx, 0, item)
-        } else {
-          const [item] = newFiles.splice(fromIdx, 1)
-          existing.splice(toIdx, 0, item)
-        }
+        draggedItem = newFiles[fromIdx]
       }
+
+      if (!draggedItem) return
+
+      // Encontrar índice real do item em form.attachments
+      const fromRealIdx = allAttachments.indexOf(draggedItem)
+      if (fromRealIdx === -1) return
+
+      // Obter o item de destino para encontrar seu índice real
+      let targetItem = null
+      if (toType === 'existing') {
+        targetItem = existing[toIdx]
+      } else {
+        targetItem = newFiles[toIdx]
+      }
+
+      const toRealIdx = targetItem ? allAttachments.indexOf(targetItem) : allAttachments.length
+
+      // Remover do índice antigo
+      const [removed] = allAttachments.splice(fromRealIdx, 1)
+      
+      // Inserir no novo índice (ajustado se necessário)
+      const insertIdx = fromRealIdx < toRealIdx ? toRealIdx - 1 : toRealIdx
+      allAttachments.splice(insertIdx, 0, removed)
+
+      // Forçar reatividade
+      form.attachments = [...allAttachments]
 
       this.draggedAttachment.from = null
       this.draggedAttachment.fromIdx = null
