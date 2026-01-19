@@ -8,6 +8,7 @@
     <Cleaners v-else-if="currentRoute === 'cleaners'" />
     <Properties v-else-if="currentRoute === 'properties'" />
     <Bookings v-else-if="currentRoute === 'bookings'" />
+    <Analysis v-else-if="currentRoute === 'analysis'" />
     <Profile v-else-if="currentRoute === 'profile'" :user="user" />
   </div>
 </template>
@@ -20,6 +21,7 @@ import Sellers from './Sellers.vue'
 import Cleaners from './Cleaners.vue'
 import Properties from './Properties.vue'
 import Bookings from './Bookings.vue'
+import Analysis from './Analysis.vue'
 import Profile from './Profile.vue'
 import { router } from '../router.js'
 
@@ -32,6 +34,7 @@ export default {
     Cleaners,
     Properties,
     Bookings,
+    Analysis,
     Profile
   },
 

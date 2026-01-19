@@ -80,6 +80,13 @@
           >
             Locações
           </button>
+
+          <button
+            @click="navigate('analysis')"
+            class="text-gray-700 hover:text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-50"
+          >
+            Análise
+          </button>
         </div>
 
         <!-- Menu do usuário à direita -->
@@ -199,6 +206,12 @@
           class="w-full text-left block text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-medium transition"
         >
           Locações
+        </button>
+        <button
+          @click="navigate('analysis')"
+          class="w-full text-left block text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-medium transition"
+        >
+          Análise
         </button>
       </div>
     </div>

@@ -4,22 +4,14 @@ class Stay < ApplicationRecord
   belongs_to :property, optional: true
   belongs_to :seller, class_name: "Seller", optional: true
 
-  STATUSES = %w[pending confirmed cancelled completed].freeze
-
   validates :property_name, :guest_name, :guest_email, :check_in_date, :check_out_date, presence: true
   validates :check_out_date, comparison: { greater_than: :check_in_date }
-  validates :status, inclusion: { in: STATUSES }
   validate :check_in_date_cannot_be_in_past
 
-  before_validation :ensure_status
   before_validation :sync_names_from_associations
   before_create :generate_booking_reference
 
   private
-
-  def ensure_status
-    self.status = STATUSES.first if status.blank?
-  end
 
   def sync_names_from_associations
     if property.present?

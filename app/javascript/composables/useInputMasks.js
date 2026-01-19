@@ -65,6 +65,45 @@ export function useInputMasks() {
     return formatted
   }
 
+  const applyCurrencyMask = (value) => {
+    const stringValue = String(value || '')
+    
+    // Remove tudo exceto números
+    let clean = stringValue.replace(/\D/g, '')
+    
+    // Se estiver vazio, retorna vazio
+    if (!clean) return ''
+    
+    // Se tem apenas 1 dígito, adiciona 0 à esquerda (ex: 5 vira 05 para exibir como 0,05)
+    if (clean.length === 1) clean = '0' + clean
+    
+    // Os últimos 2 dígitos são centavos
+    // Exemplo: "123456" vira "1234,56"
+    const integerPart = clean.slice(0, -2) || '0'
+    const decimalPart = clean.slice(-2)
+    
+    // Converte a parte inteira para número (para remover zeros à esquerda)
+    let number = parseInt(integerPart) + parseInt(decimalPart) / 100
+    
+    // Formata para pt-BR com 2 casas decimais
+    return number.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+  }
+
+  const parseCurrencyToNumber = (value) => {
+    // Se já for número, retorna
+    if (typeof value === 'number') return value
+    
+    // Converte para string
+    const stringValue = String(value || '0')
+    
+    // Remove pontos (separadores de milhar) e substitui vírgula por ponto
+    const clean = stringValue.replace(/\./g, '').replace(',', '.')
+    return parseFloat(clean) || 0
+  }
+
   const handlePhoneMaskInput = (event) => {
     event.target.value = applyPhoneMask(event.target.value)
   }
@@ -79,6 +118,10 @@ export function useInputMasks() {
 
   const handleZipMaskInput = (event) => {
     event.target.value = applyZipMask(event.target.value)
+  }
+
+  const handleCurrencyMaskInput = (event) => {
+    event.target.value = applyCurrencyMask(event.target.value)
   }
 
   const fetchAddressByCep = async (cep, form) => {
@@ -102,10 +145,13 @@ export function useInputMasks() {
     applyCpfMask,
     applyRgMask,
     applyZipMask,
+    applyCurrencyMask,
+    parseCurrencyToNumber,
     handlePhoneMaskInput,
     handleCpfMaskInput,
     handleRgMaskInput,
     handleZipMaskInput,
+    handleCurrencyMaskInput,
     fetchAddressByCep
   }
 }

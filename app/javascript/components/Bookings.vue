@@ -138,27 +138,13 @@
             @click="viewBooking(booking)"
             :class="[
               'p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition',
-              booking.status === 'confirmed' ? 'bg-green-50 border-green-500' : 
-              booking.status === 'pending' ? 'bg-yellow-50 border-yellow-500' : 
-              booking.status === 'cancelled' ? 'bg-red-50 border-red-500' : 
-              'bg-blue-50 border-blue-500'
+              booking.property_type === 'cleaning' ? 'bg-emerald-50 border-emerald-500' : 'bg-indigo-50 border-indigo-500'
             ]"
           >
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 <div class="flex items-center space-x-2 mb-1">
                   <h4 class="font-semibold text-gray-900">{{ getBookingLabel(booking) }}</h4>
-                  <span
-                    :class="[
-                      'text-xs px-2 py-0.5 rounded-full',
-                      booking.status === 'confirmed' ? 'bg-green-200 text-green-800' : 
-                      booking.status === 'pending' ? 'bg-yellow-200 text-yellow-800' : 
-                      booking.status === 'cancelled' ? 'bg-red-200 text-red-800' : 
-                      'bg-blue-200 text-blue-800'
-                    ]"
-                  >
-                    {{ getStatusLabel(booking.status) }}
-                  </span>
                   <span
                     v-if="booking.property_type === 'cleaning'"
                     class="text-xs px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800"
@@ -220,7 +206,22 @@
           <div v-if="entryType === 'cleaning'" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Faxineira *</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-sm font-medium text-gray-700">Faxineira *</label>
+                  <a
+                    v-if="cleanerWhatsAppLink"
+                    :href="cleanerWhatsAppLink"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-gray-400 hover:text-emerald-600 transition"
+                    :title="'WhatsApp de ' + (selectedCleaner ? selectedCleaner.name : 'Contato')"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                      <path d="M19.11 17.36c-.28-.14-1.64-.81-1.9-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.17.19-.33.21-.61.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.91-.16-.28-.02-.43.12-.57.12-.12.28-.33.42-.5.14-.17.19-.28.28-.47.09-.19.05-.36-.02-.5-.07-.14-.64-1.53-.88-2.1-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.28-1 1-1 2.45 0 1.44 1.03 2.84 1.17 3.04.14.19 2.02 3.08 4.89 4.31.68.29 1.21.46 1.62.58.68.22 1.31.19 1.8.12.55-.08 1.64-.67 1.87-1.31.23-.64.23-1.19.16-1.31-.07-.12-.26-.19-.54-.33z"/>
+                      <path d="M26.73 5.27C24.24 2.79 21.21 1.5 18 1.5 9.99 1.5 3.5 7.99 3.5 16c0 2.56.67 5.06 1.94 7.27L3 31l7.91-2.38C13.06 29.89 15.49 30.5 18 30.5 26.01 30.5 32.5 24.01 32.5 16c0-3.21-1.29-6.24-3.77-8.73zM18 28.5c-2.29 0-4.52-.62-6.47-1.8l-.46-.27-4.7 1.41 1.45-4.57-.3-.47C6.3 20.3 5.5 18.18 5.5 16 5.5 9.1 11.1 3.5 18 3.5S30.5 9.1 30.5 16 24.9 28.5 18 28.5z"/>
+                    </svg>
+                  </a>
+                </div>
                 <select
                   v-model.number="form.customer_id"
                   @change="handleCleanerChange"
@@ -229,7 +230,7 @@
                 >
                   <option value="new" class="font-semibold text-indigo-600">+ Nova Faxineira</option>
                   <option value="" disabled>Selecione uma faxineira</option>
-                  <option v-for="cleaner in cleaners" :key="cleaner.id" :value="cleaner.id">
+                  <option v-for="cleaner in activeCleaners" :key="cleaner.id" :value="cleaner.id">
                     {{ cleaner.name }}
                   </option>
                 </select>
@@ -295,7 +296,22 @@
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Hóspede *</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-sm font-medium text-gray-700">Hóspede *</label>
+                <a
+                  v-if="customerWhatsAppLink"
+                  :href="customerWhatsAppLink"
+                  target="_blank"
+                  rel="noopener"
+                  class="text-gray-400 hover:text-emerald-600 transition"
+                  :title="'WhatsApp de ' + (selectedCustomer ? selectedCustomer.name : 'Contato')"
+                >
+                  <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                    <path d="M19.11 17.36c-.28-.14-1.64-.81-1.9-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.17.19-.33.21-.61.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.91-.16-.28-.02-.43.12-.57.12-.12.28-.33.42-.5.14-.17.19-.28.28-.47.09-.19.05-.36-.02-.5-.07-.14-.64-1.53-.88-2.1-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.28-1 1-1 2.45 0 1.44 1.03 2.84 1.17 3.04.14.19 2.02 3.08 4.89 4.31.68.29 1.21.46 1.62.58.68.22 1.31.19 1.8.12.55-.08 1.64-.67 1.87-1.31.23-.64.23-1.19.16-1.31-.07-.12-.26-.19-.54-.33z"/>
+                    <path d="M26.73 5.27C24.24 2.79 21.21 1.5 18 1.5 9.99 1.5 3.5 7.99 3.5 16c0 2.56.67 5.06 1.94 7.27L3 31l7.91-2.38C13.06 29.89 15.49 30.5 18 30.5 26.01 30.5 32.5 24.01 32.5 16c0-3.21-1.29-6.24-3.77-8.73zM18 28.5c-2.29 0-4.52-.62-6.47-1.8l-.46-.27-4.7 1.41 1.45-4.57-.3-.47C6.3 20.3 5.5 18.18 5.5 16 5.5 9.1 11.1 3.5 18 3.5S30.5 9.1 30.5 16 24.9 28.5 18 28.5z"/>
+                  </svg>
+                </a>
+              </div>
               <select
                 v-model.number="form.customer_id"
                 @change="handleCustomerChange"
@@ -304,7 +320,7 @@
               >
                 <option value="new" class="font-semibold text-indigo-600">+ Novo Hóspede</option>
                 <option value="" disabled>Selecione um hóspede</option>
-                <option v-for="customer in customers" :key="customer.id" :value="customer.id">
+                <option v-for="customer in activeCustomers" :key="customer.id" :value="customer.id">
                   {{ customer.name }}
                 </option>
               </select>
@@ -357,10 +373,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Valor Total a Receber (R$)</label>
               <input
-                v-model.number="form.total_due"
-                type="number"
-                step="0.01"
-                min="0"
+                v-model="form.total_due"
+                type="text"
+                @input="e => handleCurrencyInput(e, 'total_due')"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -368,10 +383,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Valor Sinal (R$)</label>
               <input
-                v-model.number="form.deposit_amount"
-                type="number"
-                step="0.01"
-                min="0"
+                v-model="form.deposit_amount"
+                type="text"
+                @input="e => handleCurrencyInput(e, 'deposit_amount')"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -379,10 +393,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Valor Final (R$)</label>
               <input
-                v-model.number="form.final_amount"
-                type="number"
-                step="0.01"
-                min="0"
+                v-model="form.final_amount"
+                type="text"
+                @input="e => handleCurrencyInput(e, 'final_amount')"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -390,12 +403,12 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Saldo a Receber (R$)</label>
               <input
-                v-model.number="form.balance_due"
-                type="number"
-                step="0.01"
-                min="0"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                :value="formatCurrencyDisplay(calculateBalanceDue())"
+                type="text"
+                disabled
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
               />
+              <p class="text-xs text-gray-500 mt-1">Calculado automaticamente: Valor Total - Sinal</p>
             </div>
 
             <div class="md:col-span-2">
@@ -408,7 +421,22 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Corretor</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-sm font-medium text-gray-700">Corretor</label>
+                <a
+                  v-if="sellerWhatsAppLink"
+                  :href="sellerWhatsAppLink"
+                  target="_blank"
+                  rel="noopener"
+                  class="text-gray-400 hover:text-emerald-600 transition"
+                  :title="'WhatsApp de ' + (selectedSeller ? selectedSeller.name : 'Contato')"
+                >
+                  <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                    <path d="M19.11 17.36c-.28-.14-1.64-.81-1.9-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.17.19-.33.21-.61.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.91-.16-.28-.02-.43.12-.57.12-.12.28-.33.42-.5.14-.17.19-.28.28-.47.09-.19.05-.36-.02-.5-.07-.14-.64-1.53-.88-2.1-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.28-1 1-1 2.45 0 1.44 1.03 2.84 1.17 3.04.14.19 2.02 3.08 4.89 4.31.68.29 1.21.46 1.62.58.68.22 1.31.19 1.8.12.55-.08 1.64-.67 1.87-1.31.23-.64.23-1.19.16-1.31-.07-.12-.26-.19-.54-.33z"/>
+                    <path d="M26.73 5.27C24.24 2.79 21.21 1.5 18 1.5 9.99 1.5 3.5 7.99 3.5 16c0 2.56.67 5.06 1.94 7.27L3 31l7.91-2.38C13.06 29.89 15.49 30.5 18 30.5 26.01 30.5 32.5 24.01 32.5 16c0-3.21-1.29-6.24-3.77-8.73zM18 28.5c-2.29 0-4.52-.62-6.47-1.8l-.46-.27-4.7 1.41 1.45-4.57-.3-.47C6.3 20.3 5.5 18.18 5.5 16 5.5 9.1 11.1 3.5 18 3.5S30.5 9.1 30.5 16 24.9 28.5 18 28.5z"/>
+                  </svg>
+                </a>
+              </div>
               <select
                 v-model.number="form.seller_id"
                 @change="handleSellerChange"
@@ -416,7 +444,7 @@
               >
                 <option value="new" class="font-semibold text-indigo-600">+ Novo Corretor</option>
                 <option value="">Selecione um corretor</option>
-                <option v-for="seller in sellers" :key="seller.id" :value="seller.id">
+                <option v-for="seller in activeSellers" :key="seller.id" :value="seller.id">
                   {{ seller.name }}
                 </option>
               </select>
@@ -425,10 +453,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Valor Total a Pagar (R$)</label>
               <input
-                v-model.number="form.total_payable"
-                type="number"
-                step="0.01"
-                min="0"
+                v-model="form.total_payable"
+                type="text"
+                @input="e => handleCurrencyInput(e, 'total_payable')"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -436,10 +463,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Valor Total Pago (R$)</label>
               <input
-                v-model.number="form.total_paid"
-                type="number"
-                step="0.01"
-                min="0"
+                v-model="form.total_paid"
+                type="text"
+                @input="e => handleCurrencyInput(e, 'total_paid')"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -447,12 +473,12 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Saldo a Pagar (R$)</label>
               <input
-                v-model.number="form.balance_payable"
-                type="number"
-                step="0.01"
-                min="0"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                :value="formatCurrencyDisplay(calculateBalancePayable())"
+                type="text"
+                disabled
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
               />
+              <p class="text-xs text-gray-500 mt-1">Calculado automaticamente: Total a Pagar - Total Pago</p>
             </div>
 
             <div class="md:col-span-2">
@@ -463,25 +489,21 @@
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               ></textarea>
             </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                v-model="form.status"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="pending">Pendente</option>
-                <option value="confirmed">Confirmado</option>
-                <option value="cancelled">Cancelado</option>
-                <option value="completed">Concluído</option>
-              </select>
-            </div>
           </div>
         </form>
 
         <div class="px-6 py-4 border-t border-gray-200 flex-shrink-0 bg-white flex justify-between items-center relative">
-          <div v-if="formErrors.general" class="absolute left-6 -top-12 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg w-[calc(100%-3rem)]">
-            {{ formErrors.general }}
+          <div v-if="formErrors.general" class="absolute left-6 -top-12 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg w-[calc(100%-3rem)] flex items-start justify-between">
+            <span class="flex-1">{{ formErrors.general }}</span>
+            <button 
+              @click="formErrors.general = ''"
+              class="ml-3 text-red-700 hover:text-red-900 flex-shrink-0"
+              type="button"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
           <button
             v-if="editingBooking"
@@ -545,7 +567,7 @@ export default {
     ConfirmationModal
   },
   data() {
-    const { applyPhoneMask, applyCpfMask, applyRgMask, applyZipMask, fetchAddressByCep } = useInputMasks()
+    const { applyPhoneMask, applyCpfMask, applyRgMask, applyZipMask, fetchAddressByCep, handleCurrencyMaskInput, parseCurrencyToNumber } = useInputMasks()
 
     return {
       applyPhoneMask,
@@ -553,6 +575,8 @@ export default {
       applyRgMask,
       applyZipMask,
       fetchAddressByCep,
+      handleCurrencyMaskInput,
+      parseCurrencyToNumber,
       currentMonth: new Date().getMonth(),
       currentYear: new Date().getFullYear(),
       bookings: [],
@@ -619,6 +643,66 @@ export default {
       return [...filtered].sort((a, b) => {
         return new Date(a.check_in_date) - new Date(b.check_in_date)
       })
+    },
+
+    activeCustomers() {
+      return this.customers.filter(c => !c.blocked)
+    },
+
+    activeCleaners() {
+      return this.cleaners.filter(c => !c.blocked)
+    },
+
+    activeSellers() {
+      return this.sellers.filter(s => !s.blocked)
+    },
+
+    selectedCustomer() {
+      const id = String(this.form.customer_id || '')
+      if (!id) return null
+      return this.customers.find(c => String(c.id) === id) || null
+    },
+
+    selectedCleaner() {
+      const id = String(this.form.customer_id || '')
+      if (!id) return null
+      return this.cleaners.find(c => String(c.id) === id) || null
+    },
+
+    selectedSeller() {
+      const id = String(this.form.seller_id || '')
+      if (!id) return null
+      return this.sellers.find(s => String(s.id) === id) || null
+    },
+
+    customerWhatsAppLink() {
+      const phone = this.selectedCustomer && this.selectedCustomer.phone
+      if (!phone) return null
+      const digits = String(phone).replace(/\D/g, '')
+      if (digits.length === 10 || digits.length === 11) {
+        return this.makeWhatsAppLink(phone)
+      }
+      return null
+    },
+
+    cleanerWhatsAppLink() {
+      const phone = this.selectedCleaner && this.selectedCleaner.phone
+      if (!phone) return null
+      const digits = String(phone).replace(/\D/g, '')
+      if (digits.length === 10 || digits.length === 11) {
+        return this.makeWhatsAppLink(phone)
+      }
+      return null
+    },
+
+    sellerWhatsAppLink() {
+      const phone = this.selectedSeller && this.selectedSeller.phone
+      if (!phone) return null
+      const digits = String(phone).replace(/\D/g, '')
+      if (digits.length === 10 || digits.length === 11) {
+        return this.makeWhatsAppLink(phone)
+      }
+      return null
     }
   },
 
@@ -650,7 +734,7 @@ export default {
   },
 
   methods: {
-    getEmptyForm(defaultStatus = 'pending', type = 'booking') {
+    getEmptyForm(type = 'booking') {
       return {
         customer_id: '',
         property_id: '',
@@ -662,17 +746,13 @@ export default {
         check_in_date: '',
         check_out_date: '',
         number_of_guests: 1,
-        total_due: 0,
-        deposit_amount: 0,
-        final_amount: 0,
-        balance_due: 0,
+        total_due: '0,00',
+        deposit_amount: '0,00',
+        final_amount: '0,00',
         guest_note: '',
-        total_payable: 0,
-        total_paid: 0,
-        balance_payable: 0,
+        total_payable: '0,00',
+        total_paid: '0,00',
         seller_note: '',
-        status: defaultStatus,
-        total_price: 0,
         description: ''
       }
     },
@@ -754,14 +834,7 @@ export default {
       if (booking.property_type === 'cleaning') {
         return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
       }
-
-      const colors = {
-        confirmed: 'bg-green-100 text-green-800 hover:bg-green-200',
-        pending: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-        cancelled: 'bg-red-100 text-red-800 hover:bg-red-200',
-        completed: 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-      }
-      return colors[booking.status] || 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+      return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
     },
 
     getBookingLabel(booking) {
@@ -771,14 +844,43 @@ export default {
       return booking.guest_name
     },
 
-    getStatusLabel(status) {
-      const labels = {
-        confirmed: 'Confirmado',
-        pending: 'Pendente',
-        cancelled: 'Cancelado',
-        completed: 'Concluído'
-      }
-      return labels[status] || status
+    calculateBalanceDue() {
+      const total = this.parseCurrencyToNumber(this.form.total_due || '0')
+      const deposit = this.parseCurrencyToNumber(this.form.deposit_amount || '0')
+      return Math.max(0, total - deposit)
+    },
+
+    calculateBalancePayable() {
+      const totalPayable = this.parseCurrencyToNumber(this.form.total_payable || '0')
+      const totalPaid = this.parseCurrencyToNumber(this.form.total_paid || '0')
+      return Math.max(0, totalPayable - totalPaid)
+    },
+
+    formatCurrencyDisplay(value) {
+      return value.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+    },
+
+    handleCurrencyInput(event, fieldName) {
+      const cursorPosition = event.target.selectionStart
+      const oldValue = event.target.value
+      const oldLength = oldValue.length
+      
+      // Aplica a máscara
+      const newValue = this.applyCurrencyMask(event.target.value)
+      
+      // Atualiza o form
+      this.form[fieldName] = newValue
+      
+      // Restaura a posição do cursor após a formatação
+      this.$nextTick(() => {
+        const newLength = newValue.length
+        const diff = newLength - oldLength
+        const newCursorPosition = Math.max(0, cursorPosition + diff)
+        event.target.setSelectionRange(newCursorPosition, newCursorPosition)
+      })
     },
 
     isToday(date) {
@@ -820,7 +922,7 @@ export default {
     openCreateModal(type = 'booking') {
       this.entryType = type
       this.editingBooking = null
-      this.form = this.getEmptyForm('pending', type)
+      this.form = this.getEmptyForm(type)
       if (this.selectedPropertyId) {
         this.form.property_id = this.selectedPropertyId
       }
@@ -833,12 +935,18 @@ export default {
       this.entryType = type
       this.editingBooking = booking
       this.form = {
-        ...this.getEmptyForm('pending', type),
+        ...this.getEmptyForm(type),
         ...booking,
         customer_id: booking.customer_id || '',
         property_id: booking.property_id || '',
         seller_id: booking.seller_id || '',
-        property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : '')
+        property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
+        // Formatar valores monetários para exibição
+        total_due: this.formatCurrencyDisplay(booking.total_due || 0),
+        deposit_amount: this.formatCurrencyDisplay(booking.deposit_amount || 0),
+        final_amount: this.formatCurrencyDisplay(booking.final_amount || 0),
+        total_payable: this.formatCurrencyDisplay(booking.total_payable || 0),
+        total_paid: this.formatCurrencyDisplay(booking.total_paid || 0)
       }
       this.isModalOpen = true
     },
@@ -848,12 +956,18 @@ export default {
       this.entryType = type
       this.editingBooking = booking
       this.form = {
-        ...this.getEmptyForm('pending', type),
+        ...this.getEmptyForm(type),
         ...booking,
         customer_id: booking.customer_id || '',
         property_id: booking.property_id || '',
         seller_id: booking.seller_id || '',
-        property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : '')
+        property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
+        // Formatar valores monetários para exibição
+        total_due: this.formatCurrencyDisplay(booking.total_due || 0),
+        deposit_amount: this.formatCurrencyDisplay(booking.deposit_amount || 0),
+        final_amount: this.formatCurrencyDisplay(booking.final_amount || 0),
+        total_payable: this.formatCurrencyDisplay(booking.total_payable || 0),
+        total_paid: this.formatCurrencyDisplay(booking.total_paid || 0)
       }
       this.formErrors = {}
       this.isModalOpen = true
@@ -883,13 +997,21 @@ export default {
         }
         
         const selectedProperty = this.properties.find(p => String(p.id) === String(this.form.property_id))
+        
+        // Converter valores mascarados para números antes de enviar
         const payload = {
           ...this.form,
           guest_name: selectedPerson ? selectedPerson.name : this.form.guest_name,
           guest_email: selectedPerson && selectedPerson.email ? selectedPerson.email : this.form.guest_email,
           property_name: selectedProperty ? selectedProperty.name : this.form.property_name,
           property_type: isCleaning ? 'cleaning' : (this.form.property_type || ''),
-          total_price: this.form.final_amount || this.form.total_price
+          total_due: this.parseCurrencyToNumber(this.form.total_due || '0'),
+          deposit_amount: this.parseCurrencyToNumber(this.form.deposit_amount || '0'),
+          final_amount: this.parseCurrencyToNumber(this.form.final_amount || '0'),
+          total_payable: this.parseCurrencyToNumber(this.form.total_payable || '0'),
+          total_paid: this.parseCurrencyToNumber(this.form.total_paid || '0'),
+          balance_due: this.calculateBalanceDue(),
+          balance_payable: this.calculateBalancePayable()
         }
 
         let result
@@ -974,6 +1096,18 @@ export default {
       } finally {
         this.deleting = false
       }
+    },
+
+    makeWhatsAppLink(phone) {
+      if (!phone) return null
+      let digits = String(phone).replace(/\D/g, '')
+      if (!digits) return null
+      if (digits.startsWith('55')) {
+        // already in intl format
+      } else if (digits.length === 11 || digits.length === 10) {
+        digits = '55' + digits
+      }
+      return `https://wa.me/${digits}`
     }
   }
 }

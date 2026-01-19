@@ -32,6 +32,7 @@ pt-BR:
               blank: "não pode ficar em branco"
     models:
       person: "Pessoa"
+      stay: "Locação"
     attributes:
       person:
         name: "Nome"
@@ -49,3 +50,21 @@ pt-BR:
         zip: "CEP"
         note: "Observações"
         blocked: "Bloqueado"
+      stay:
+        property_name: "Nome do imóvel"
+        guest_name: "Nome do hóspede"
+        guest_email: "E-mail do hóspede"
+        check_in_date: "Data de entrada"
+        check_out_date: "Data de saída"
+        number_of_guests: "Número de hóspedes"
+        total_due: "Valor total a receber"
+        deposit_amount: "Valor do sinal"
+        final_amount: "Valor final"
+        balance_due: "Saldo a receber"
+        total_payable: "Valor total a pagar"
+        total_paid: "Valor total pago"
+        balance_payable: "Saldo a pagar"
+        guest_note: "Observação do hóspede"
+        seller_note: "Observação do corretor"
+        property_type: "Tipo de propriedade"
+        description: "Descrição"

@@ -40,7 +40,7 @@ class Api::V1::StaysController < ApplicationController
     params.require(:stay).permit(:property_name, :property_type, :check_in_date, :check_out_date,
                                   :number_of_guests, :bedrooms, :bathrooms, :price_per_night,
                                   :total_price, :currency, :description, :address, :amenities,
-                                  :status, :guest_name, :guest_email, :customer_id, :property_id,
+                                  :guest_name, :guest_email, :customer_id, :property_id,
                                   :seller_id, :total_due, :deposit_amount, :final_amount, :balance_due,
                                   :guest_note, :total_payable, :total_paid, :balance_payable, :seller_note)
   end

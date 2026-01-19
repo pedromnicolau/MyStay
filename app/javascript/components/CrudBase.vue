@@ -48,7 +48,11 @@
                 </tr>
               </template>
               <template v-else>
-                <tr v-for="item in validItems" :key="item.id" class="hover:bg-gray-50 transition">
+                <tr
+                  v-for="item in validItems"
+                  :key="item.id"
+                  :class="['transition', item.blocked ? 'bg-red-50 hover:bg-red-50' : 'hover:bg-gray-50']"
+                >
                   <td
                     v-for="column in columns"
                     :key="column.key"

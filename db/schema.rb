@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_19_024000) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_19_051010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -75,7 +75,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_024000) do
     t.text "description"
     t.string "address"
     t.text "amenities"
-    t.string "status", default: "pending"
     t.string "booking_reference"
     t.string "guest_name", null: false
     t.string "guest_email", null: false
@@ -97,7 +96,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_024000) do
     t.index ["customer_id"], name: "index_stays_on_customer_id"
     t.index ["property_id"], name: "index_stays_on_property_id"
     t.index ["seller_id"], name: "index_stays_on_seller_id"
-    t.index ["status"], name: "index_stays_on_status"
     t.index ["user_id"], name: "index_stays_on_user_id"
   end
 
