@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_19_134345) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_19_135110) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -97,6 +97,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_134345) do
     t.boolean "pet_friendly", default: false, null: false
     t.boolean "wheelchair_accessible", default: false, null: false
     t.text "description"
+    t.json "attachments_order", default: []
     t.index ["active"], name: "index_properties_on_active"
     t.index ["city"], name: "index_properties_on_city"
     t.index ["user_id"], name: "index_properties_on_user_id"

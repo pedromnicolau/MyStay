@@ -163,6 +163,16 @@
         </div>
 
         <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+          <textarea
+            v-model="form.description"
+            placeholder="Descreva o imóvel com detalhes... (ex: Casa confortável à beira-mar, com vista para o oceano, 3 quartos...)"
+            rows="4"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          />
+        </div>
+
+        <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-2">Anexos (imagens e vídeos)</label>
           <div class="space-y-3">
             <div v-if="existingAttachments(form).length || newAttachments(form).length" class="flex flex-wrap gap-3">
@@ -173,9 +183,13 @@
                 @dragstart="startDragAttachment($event, 'existing', existingIdx, form)"
                 @dragover.prevent="dragOverAttachment($event, 'existing', existingIdx)"
                 @drop.prevent="dropAttachment($event, 'existing', existingIdx, form)"
+                @dragleave="dragOverIdx = null"
                 @dragend="endDragAttachment"
-                class="relative w-28 h-28 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 cursor-move transition"
-                :class="{ 'opacity-50 bg-indigo-100 border-indigo-400': draggedAttachment.from === 'existing' && draggedAttachment.fromIdx === existingIdx }"
+                class="relative w-28 h-28 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-move transition"
+                :class="{ 
+                  'opacity-50 bg-indigo-100 border-indigo-400': draggedAttachment.from === 'existing' && draggedAttachment.fromIdx === existingIdx,
+                  'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'existing' && dragOverIdx === existingIdx
+                }"
                 @click="openLightbox(existingIdx, form)"
               >
                 <button
@@ -212,9 +226,13 @@
                 @dragstart="startDragAttachment($event, 'new', newIdx, form)"
                 @dragover.prevent="dragOverAttachment($event, 'new', newIdx)"
                 @drop.prevent="dropAttachment($event, 'new', newIdx, form)"
+                @dragleave="dragOverIdx = null"
                 @dragend="endDragAttachment"
-                class="relative w-28 h-28 rounded-lg overflow-hidden border border-indigo-200 bg-indigo-50 cursor-move transition"
-                :class="{ 'opacity-50 bg-indigo-100 border-indigo-600': draggedAttachment.from === 'new' && draggedAttachment.fromIdx === newIdx }"
+                class="relative w-28 h-28 rounded-lg overflow-hidden border-2 border-indigo-200 bg-indigo-50 cursor-move transition"
+                :class="{ 
+                  'opacity-50 bg-indigo-100 border-indigo-600': draggedAttachment.from === 'new' && draggedAttachment.fromIdx === newIdx,
+                  'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'new' && dragOverIdx === newIdx
+                }"
                 @click="openLightbox(existingAttachments(form).length + newIdx, form)"
               >
                 <button
@@ -266,16 +284,6 @@
               </div>
             </label>
           </div>
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-          <textarea
-            v-model="form.description"
-            placeholder="Descreva o imóvel com detalhes... (ex: Casa confortável à beira-mar, com vista para o oceano, 3 quartos...)"
-            rows="4"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-          />
         </div>
 
         <div class="md:col-span-2">
@@ -383,6 +391,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 import CrudBase from './CrudBase.vue'
 import SelectWithFilter from './SelectWithFilter.vue'
 import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
@@ -403,6 +412,8 @@ export default {
         from: null,
         fromIdx: null
       },
+      dragOverIdx: null,
+      dragOverType: null,
       lightbox: {
         open: false,
         items: [],
@@ -608,6 +619,8 @@ export default {
 
     dragOverAttachment(event, type, index) {
       event.dataTransfer.dropEffect = 'move'
+      this.dragOverType = type
+      this.dragOverIdx = index
     },
 
     dropAttachment(event, toType, toIdx, form) {
@@ -658,13 +671,43 @@ export default {
       // Forçar reatividade
       form.attachments = [...allAttachments]
 
+      // Salvar a ordem dos anexos
+      this.saveAttachmentsOrder(form)
+
       this.draggedAttachment.from = null
       this.draggedAttachment.fromIdx = null
+      this.dragOverType = null
+      this.dragOverIdx = null
     },
 
     endDragAttachment() {
       this.draggedAttachment.from = null
       this.draggedAttachment.fromIdx = null
+    },
+
+    async saveAttachmentsOrder(form) {
+      // Só salvar se houver um ID de property (item já salvo no banco)
+      if (!this.$parent.editingItem || !this.$parent.editingItem.id) return
+
+      try {
+        const allAttachments = form.attachments || []
+        const attachmentIds = allAttachments.map(att => att.id).filter(id => id)
+        
+        const payload = {
+          property: {
+            attachments_order: attachmentIds
+          }
+        }
+
+        const token = localStorage.getItem('token')
+        await axios.put(
+          `/api/v1/properties/${this.$parent.editingItem.id}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      } catch (error) {
+        console.error('Erro ao salvar ordem dos anexos:', error)
+      }
     },
 
     attachmentContentType(attachment) {

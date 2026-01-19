@@ -18,6 +18,7 @@ class Api::V1::PropertiesController < ApplicationController
     if property.save
       attach_new_files_to(property)
       assign_main_attachment_if_needed(property)
+      save_attachments_order(property)
       render json: serialize_property(property), status: :created
     else
       render json: { errors: property.errors.full_messages }, status: :unprocessable_entity
@@ -29,6 +30,7 @@ class Api::V1::PropertiesController < ApplicationController
       attach_new_files
       purge_removed_attachments
       assign_main_attachment_if_needed
+      save_attachments_order
       render json: serialize_property(@property), status: :ok
     else
       render json: { errors: @property.errors.full_messages }, status: :unprocessable_entity
@@ -53,7 +55,7 @@ class Api::V1::PropertiesController < ApplicationController
       :air_conditioning, :wifi, :tv, :kitchen, :parking_included,
       :washing_machine, :pool, :barbecue_grill, :balcony, :pet_friendly, :wheelchair_accessible,
       :main_attachment_id, :main_attachment_name,
-      attachments: [], remove_attachment_ids: []
+      attachments: [], remove_attachment_ids: [], attachments_order: []
     )
   end
 
@@ -104,8 +106,9 @@ class Api::V1::PropertiesController < ApplicationController
 
   def attachments_payload(property)
     main_id = property.respond_to?(:main_attachment_id) ? property.main_attachment_id : nil
+    order = property.respond_to?(:attachments_order) ? property.attachments_order : []
 
-    property.attachments.map do |attachment|
+    attachments_list = property.attachments.map do |attachment|
       {
         id: attachment.id,
         filename: attachment.filename.to_s,
@@ -115,7 +118,28 @@ class Api::V1::PropertiesController < ApplicationController
         url: url_for(attachment),
         is_main: main_id.present? && attachment.id == main_id
       }
-    end.sort_by { |att| att[:is_main] ? 0 : 1 }
+    end
+
+    # Ordenar pela attachments_order se disponível
+    if order.any?
+      # Criar hash para lookup rápido de posição
+      position_map = order.each_with_index.to_h
+      
+      # Separar pinned do resto
+      pinned = attachments_list.select { |att| att[:is_main] }
+      unpinned = attachments_list.reject { |att| att[:is_main] }
+      
+      # Ordenar unpinned pela posição salva
+      unpinned.sort_by! do |att|
+        position_map[att[:id]] || Float::INFINITY
+      end
+      
+      # Pinned sempre primeiro
+      pinned + unpinned
+    else
+      # Fallback: pinned primeiro
+      attachments_list.sort_by { |att| att[:is_main] ? 0 : 1 }
+    end
   end
 
   def assign_main_attachment_if_needed(property_record = @property)
@@ -140,5 +164,19 @@ class Api::V1::PropertiesController < ApplicationController
     if candidate
       property_record.update_column(:main_attachment_id, candidate.id)
     end
+  end
+
+  def save_attachments_order(property_record = @property)
+    return unless property_record
+    return unless property_record.respond_to?(:attachments_order)
+
+    order = params.dig(:property, :attachments_order)
+    return if order.blank?
+
+    # Limpar IDs inválidos (que foram removidos)
+    valid_ids = property_record.attachments.pluck(:id)
+    filtered_order = Array(order).select { |id| valid_ids.include?(id.to_i) }
+
+    property_record.update_column(:attachments_order, filtered_order)
   end
 end
