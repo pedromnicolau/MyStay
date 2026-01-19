@@ -124,16 +124,16 @@ class Api::V1::PropertiesController < ApplicationController
     if order.any?
       # Criar hash para lookup rápido de posição
       position_map = order.each_with_index.to_h
-      
+
       # Separar pinned do resto
       pinned = attachments_list.select { |att| att[:is_main] }
       unpinned = attachments_list.reject { |att| att[:is_main] }
-      
+
       # Ordenar unpinned pela posição salva
       unpinned.sort_by! do |att|
         position_map[att[:id]] || Float::INFINITY
       end
-      
+
       # Pinned sempre primeiro
       pinned + unpinned
     else

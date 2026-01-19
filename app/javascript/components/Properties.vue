@@ -175,92 +175,134 @@
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-2">Anexos (imagens e vídeos)</label>
           <div class="space-y-3">
-            <div v-if="existingAttachments(form).length || newAttachments(form).length" class="flex flex-wrap gap-3">
-              <div
-                v-for="(attachment, existingIdx) in existingAttachments(form)"
-                :key="`existing-${attachment.id}`"
-                draggable="true"
-                @dragstart="startDragAttachment($event, 'existing', existingIdx, form)"
-                @dragover.prevent="dragOverAttachment($event, 'existing', existingIdx)"
-                @drop.prevent="dropAttachment($event, 'existing', existingIdx, form)"
-                @dragleave="dragOverIdx = null"
-                @dragend="endDragAttachment"
-                class="relative w-28 h-28 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-move transition"
-                :class="{ 
-                  'opacity-50 bg-indigo-100 border-indigo-400': draggedAttachment.from === 'existing' && draggedAttachment.fromIdx === existingIdx,
-                  'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'existing' && dragOverIdx === existingIdx
-                }"
-                @click="openLightbox(existingIdx, form)"
-              >
-                <button
-                  type="button"
-                  @click.stop="pinExistingAttachment(attachment, form)"
-                  class="absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer transition"
-                  :class="isPinnedExisting(attachment, form) ? 'bg-indigo-600 text-white font-semibold' : 'bg-white bg-opacity-80 text-gray-500 hover:text-indigo-600 hover:bg-opacity-100'"
-                  title="Definir como principal"
-                  draggable="false"
-                >
-                  ★
-                </button>
-                <button
-                  type="button"
-                  @click.stop="removeExistingAttachment(form, attachment)"
-                  class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer"
-                  draggable="false"
-                >
-                  ×
-                </button>
-                <template v-if="isImageAttachment(attachment)">
-                  <img :src="attachmentPreview(attachment)" alt="Pré-visualização" class="w-full h-full object-cover pointer-events-none" />
-                </template>
-                <template v-else>
-                  <video :src="attachmentPreview(attachment)" class="w-full h-full object-cover pointer-events-none" muted loop></video>
-                  <span class="absolute bottom-1 left-1 text-[10px] bg-black bg-opacity-60 text-white px-1 rounded">Vídeo</span>
-                </template>
-              </div>
+            <div v-if="existingAttachments(form).length || newAttachments(form).length" class="flex flex-wrap gap-1">
+              <!-- Attachments existentes -->
+              <template v-for="(attachment, existingIdx) in existingAttachments(form)" :key="`existing-${attachment.id}`">
+                <!-- Drop zone antes do attachment -->
+                <div
+                  v-if="existingIdx === 0"
+                  @dragover.prevent="dragOverDropZone($event, 'existing', existingIdx, 'before')"
+                  @drop.prevent="dropInZone($event, 'existing', existingIdx, 'before', form)"
+                  @dragleave="clearDropZone"
+                  class="w-3 h-28 transition-all"
+                  :class="dropZoneActive === `existing-${existingIdx}-before` ? 'bg-indigo-400 w-6 rounded-lg' : 'bg-transparent'"
+                ></div>
 
-              <div
-                v-for="(file, newIdx) in newAttachments(form)"
-                :key="`new-${file.name}-${file.lastModified}`"
-                draggable="true"
-                @dragstart="startDragAttachment($event, 'new', newIdx, form)"
-                @dragover.prevent="dragOverAttachment($event, 'new', newIdx)"
-                @drop.prevent="dropAttachment($event, 'new', newIdx, form)"
-                @dragleave="dragOverIdx = null"
-                @dragend="endDragAttachment"
-                class="relative w-28 h-28 rounded-lg overflow-hidden border-2 border-indigo-200 bg-indigo-50 cursor-move transition"
-                :class="{ 
-                  'opacity-50 bg-indigo-100 border-indigo-600': draggedAttachment.from === 'new' && draggedAttachment.fromIdx === newIdx,
-                  'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'new' && dragOverIdx === newIdx
-                }"
-                @click="openLightbox(existingAttachments(form).length + newIdx, form)"
-              >
-                <button
-                  type="button"
-                  @click.stop="pinNewAttachment(file, form)"
-                  class="absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer transition"
-                  :class="isPinnedNew(file, form) ? 'bg-indigo-600 text-white font-semibold' : 'bg-white bg-opacity-80 text-gray-500 hover:text-indigo-600 hover:bg-opacity-100'"
-                  title="Definir como principal"
-                  draggable="false"
+                <!-- Attachment -->
+                <div
+                  draggable="true"
+                  @dragstart="startDragAttachment($event, 'existing', existingIdx, form)"
+                  @dragover.prevent="dragOverAttachment($event, 'existing', existingIdx)"
+                  @drop.prevent="dropAttachment($event, 'existing', existingIdx, form)"
+                  @dragleave="dragOverIdx = null"
+                  @dragend="endDragAttachment"
+                  class="relative w-28 h-28 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 cursor-move transition"
+                  :class="{ 
+                    'opacity-50 bg-indigo-100 border-indigo-400': draggedAttachment.from === 'existing' && draggedAttachment.fromIdx === existingIdx,
+                    'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'existing' && dragOverIdx === existingIdx
+                  }"
+                  @click="openLightbox(existingIdx, form)"
                 >
-                  ★
-                </button>
-                <button
-                  type="button"
-                  @click.stop="removeNewAttachment(form, file)"
-                  class="absolute top-1 right-1 bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer"
-                  draggable="false"
+                  <button
+                    type="button"
+                    @click.stop="pinExistingAttachment(attachment, form)"
+                    class="absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer transition"
+                    :class="isPinnedExisting(attachment, form) ? 'bg-indigo-600 text-white font-semibold' : 'bg-white bg-opacity-80 text-gray-500 hover:text-indigo-600 hover:bg-opacity-100'"
+                    title="Definir como principal"
+                    draggable="false"
+                  >
+                    ★
+                  </button>
+                  <button
+                    type="button"
+                    @click.stop="removeExistingAttachment(form, attachment)"
+                    class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer"
+                    draggable="false"
+                  >
+                    ×
+                  </button>
+                  <template v-if="isImageAttachment(attachment)">
+                    <img :src="attachmentPreview(attachment)" alt="Pré-visualização" class="w-full h-full object-cover pointer-events-none" />
+                  </template>
+                  <template v-else>
+                    <video :src="attachmentPreview(attachment)" class="w-full h-full object-cover pointer-events-none" muted loop></video>
+                    <span class="absolute bottom-1 left-1 text-[10px] bg-black bg-opacity-60 text-white px-1 rounded">Vídeo</span>
+                  </template>
+                </div>
+
+                <!-- Drop zone depois do attachment -->
+                <div
+                  @dragover.prevent="dragOverDropZone($event, 'existing', existingIdx, 'after')"
+                  @drop.prevent="dropInZone($event, 'existing', existingIdx, 'after', form)"
+                  @dragleave="clearDropZone"
+                  class="w-3 h-28 transition-all"
+                  :class="dropZoneActive === `existing-${existingIdx}-after` ? 'bg-indigo-400 w-6 rounded-lg' : 'bg-transparent'"
+                ></div>
+              </template>
+
+              <!-- Attachments novos -->
+              <template v-for="(file, newIdx) in newAttachments(form)" :key="`new-${file.name}-${file.lastModified}`">
+                <!-- Drop zone antes (só se for o primeiro new e não há existing) -->
+                <div
+                  v-if="newIdx === 0 && existingAttachments(form).length === 0"
+                  @dragover.prevent="dragOverDropZone($event, 'new', newIdx, 'before')"
+                  @drop.prevent="dropInZone($event, 'new', newIdx, 'before', form)"
+                  @dragleave="clearDropZone"
+                  class="w-3 h-28 transition-all"
+                  :class="dropZoneActive === `new-${newIdx}-before` ? 'bg-indigo-400 w-6 rounded-lg' : 'bg-transparent'"
+                ></div>
+
+                <!-- Attachment -->
+                <div
+                  draggable="true"
+                  @dragstart="startDragAttachment($event, 'new', newIdx, form)"
+                  @dragover.prevent="dragOverAttachment($event, 'new', newIdx)"
+                  @drop.prevent="dropAttachment($event, 'new', newIdx, form)"
+                  @dragleave="dragOverIdx = null"
+                  @dragend="endDragAttachment"
+                  class="relative w-28 h-28 rounded-lg overflow-hidden border-2 border-indigo-200 bg-indigo-50 cursor-move transition"
+                  :class="{ 
+                    'opacity-50 bg-indigo-100 border-indigo-600': draggedAttachment.from === 'new' && draggedAttachment.fromIdx === newIdx,
+                    'border-indigo-500 ring-2 ring-indigo-300': dragOverType === 'new' && dragOverIdx === newIdx
+                  }"
+                  @click="openLightbox(existingAttachments(form).length + newIdx, form)"
                 >
-                  ×
-                </button>
-                <template v-if="isImageAttachment(file)">
-                  <img :src="attachmentPreview(file)" alt="Pré-visualização" class="w-full h-full object-cover pointer-events-none" />
-                </template>
-                <template v-else>
-                  <video :src="attachmentPreview(file)" class="w-full h-full object-cover pointer-events-none" muted loop></video>
-                  <span class="absolute bottom-1 left-1 text-[10px] bg-indigo-600 text-white px-1 rounded">Novo</span>
-                </template>
-              </div>
+                  <button
+                    type="button"
+                    @click.stop="pinNewAttachment(file, form)"
+                    class="absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer transition"
+                    :class="isPinnedNew(file, form) ? 'bg-indigo-600 text-white font-semibold' : 'bg-white bg-opacity-80 text-gray-500 hover:text-indigo-600 hover:bg-opacity-100'"
+                    title="Definir como principal"
+                    draggable="false"
+                  >
+                    ★
+                  </button>
+                  <button
+                    type="button"
+                    @click.stop="removeNewAttachment(form, file)"
+                    class="absolute top-1 right-1 bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 cursor-pointer"
+                    draggable="false"
+                  >
+                    ×
+                  </button>
+                  <template v-if="isImageAttachment(file)">
+                    <img :src="attachmentPreview(file)" alt="Pré-visualização" class="w-full h-full object-cover pointer-events-none" />
+                  </template>
+                  <template v-else>
+                    <video :src="attachmentPreview(file)" class="w-full h-full object-cover pointer-events-none" muted loop></video>
+                    <span class="absolute bottom-1 left-1 text-[10px] bg-indigo-600 text-white px-1 rounded">Novo</span>
+                  </template>
+                </div>
+
+                <!-- Drop zone depois do attachment -->
+                <div
+                  @dragover.prevent="dragOverDropZone($event, 'new', newIdx, 'after')"
+                  @drop.prevent="dropInZone($event, 'new', newIdx, 'after', form)"
+                  @dragleave="clearDropZone"
+                  class="w-3 h-28 transition-all"
+                  :class="dropZoneActive === `new-${newIdx}-after` ? 'bg-indigo-400 w-6 rounded-lg' : 'bg-transparent'"
+                ></div>
+              </template>
             </div>
 
             <label
@@ -414,6 +456,7 @@ export default {
       },
       dragOverIdx: null,
       dragOverType: null,
+      dropZoneActive: null,
       lightbox: {
         open: false,
         items: [],
@@ -467,6 +510,7 @@ export default {
         pet_friendly: false,
         wheelchair_accessible: false,
         attachments: [],
+        attachments_order: [],
         remove_attachment_ids: [],
         active: true
       }
@@ -477,10 +521,19 @@ export default {
     'form.attachments': {
       handler(newAttachments) {
         if (!Array.isArray(newAttachments)) return
+        
+        // Sincronizar main_attachment_id
         const mainAttachment = newAttachments.find(att => att && att.is_main)
         if (mainAttachment && mainAttachment.id) {
           this.form.main_attachment_id = mainAttachment.id
         }
+
+        // Atualizar attachments_order com IDs dos anexos existentes
+        const attachmentIds = newAttachments
+          .filter(att => att && att.id)
+          .map(att => att.id)
+        
+        this.form.attachments_order = attachmentIds
       },
       deep: true
     }
@@ -683,6 +736,78 @@ export default {
     endDragAttachment() {
       this.draggedAttachment.from = null
       this.draggedAttachment.fromIdx = null
+      this.dropZoneActive = null
+    },
+
+    dragOverDropZone(event, type, index, position) {
+      event.dataTransfer.dropEffect = 'move'
+      this.dropZoneActive = `${type}-${index}-${position}`
+    },
+
+    clearDropZone() {
+      this.dropZoneActive = null
+    },
+
+    dropInZone(event, toType, toIdx, position, form) {
+      const fromType = this.draggedAttachment.from
+      const fromIdx = this.draggedAttachment.fromIdx
+
+      if (fromType === null || fromIdx === null) return
+
+      // Calcular o índice real de inserção baseado na posição
+      let targetIdx = toIdx
+      if (position === 'after') {
+        targetIdx = toIdx + 1
+      }
+
+      // Trabalhar diretamente com form.attachments
+      const allAttachments = form.attachments || []
+      
+      // Encontrar índices reais em form.attachments
+      const existing = this.existingAttachments(form)
+      const newFiles = this.newAttachments(form)
+      
+      // Obter o item que será movido
+      let draggedItem = null
+      if (fromType === 'existing') {
+        draggedItem = existing[fromIdx]
+      } else {
+        draggedItem = newFiles[fromIdx]
+      }
+
+      if (!draggedItem) return
+
+      // Encontrar índice real do item em form.attachments
+      const fromRealIdx = allAttachments.indexOf(draggedItem)
+      if (fromRealIdx === -1) return
+
+      // Encontrar o índice real de inserção
+      let toRealIdx = 0
+      if (toType === 'existing' && targetIdx < existing.length) {
+        toRealIdx = allAttachments.indexOf(existing[targetIdx])
+      } else if (toType === 'new' && targetIdx < newFiles.length) {
+        toRealIdx = allAttachments.indexOf(newFiles[targetIdx])
+      } else {
+        // Inserir no final
+        toRealIdx = allAttachments.length
+      }
+
+      // Remover do índice antigo
+      const [removed] = allAttachments.splice(fromRealIdx, 1)
+      
+      // Ajustar índice se necessário
+      const insertIdx = fromRealIdx < toRealIdx ? toRealIdx - 1 : toRealIdx
+      allAttachments.splice(insertIdx, 0, removed)
+
+      // Forçar reatividade
+      form.attachments = [...allAttachments]
+
+      // Salvar a ordem dos anexos
+      this.saveAttachmentsOrder(form)
+
+      this.draggedAttachment.from = null
+      this.draggedAttachment.fromIdx = null
+      this.dropZoneActive = null
     },
 
     async saveAttachmentsOrder(form) {
