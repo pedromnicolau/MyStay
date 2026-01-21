@@ -1,6 +1,7 @@
 class Property < ApplicationRecord
   belongs_to :user
   has_many_attached :attachments, dependent: :purge_later
+  has_many :services, dependent: :nullify
 
   validates :name, presence: true
   validates :active, inclusion: { in: [ true, false ] }

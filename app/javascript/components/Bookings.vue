@@ -6,7 +6,13 @@
         <div class="flex items-center space-x-3">
           <button
             @click="openCreateModal('booking')"
-            class="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2 shadow-sm"
+            :disabled="properties.length === 0"
+            :class="[
+              'px-6 py-2.5 rounded-lg transition flex items-center space-x-2 shadow-sm',
+              properties.length === 0 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            ]"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -16,24 +22,54 @@
 
           <button
             @click="openCreateModal('cleaning')"
-            class="bg-emerald-600 text-white px-6 py-2.5 rounded-lg hover:bg-emerald-700 transition flex items-center space-x-2 shadow-sm"
+            :disabled="properties.length === 0"
+            :class="[
+              'px-6 py-2.5 rounded-lg transition flex items-center space-x-2 shadow-sm',
+              properties.length === 0 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-emerald-600 text-white hover:bg-emerald-700'
+            ]"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            <span>Nova Faxina</span>
+            <span>Novo Serviço</span>
           </button>
         </div>
       </div>
 
-      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <!-- Estado vazio: Sem imóveis cadastrados -->
+      <div v-if="properties.length === 0" class="bg-white rounded-lg shadow-sm p-12">
+        <div class="max-w-md mx-auto text-center">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">Nenhum imóvel cadastrado</h3>
+          <p class="text-gray-600 mb-6">
+            Para criar locações, é necessário cadastrar ao menos um imóvel no sistema.
+          </p>
+          <button
+            @click="navigateToProperties"
+            class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm"
+          >
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Cadastrar Imóvel
+          </button>
+        </div>
+      </div>
+
+      <!-- Calendário e filtros: Quando há imóveis -->
+      <div v-else class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Imóvel</label>
           <select
             v-model.number="selectedPropertyId"
             class="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <option value="">Todos os imóveis</option>
             <option v-for="property in properties" :key="property.id" :value="property.id">
               {{ property.name }}
             </option>
@@ -193,7 +229,7 @@
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
           <h2 class="text-xl font-semibold text-gray-900">
-            {{ editingBooking ? (entryType === 'cleaning' ? 'Editar Faxina' : 'Editar Locação') : (entryType === 'cleaning' ? 'Nova Faxina' : 'Nova Locação') }}
+            {{ editingBooking ? (entryType === 'cleaning' ? 'Editar Serviço' : 'Editar Locação') : (entryType === 'cleaning' ? 'Novo Serviço' : 'Nova Locação') }}
           </h2>
           <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,17 +252,12 @@
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imóvel *</label>
-                <select
-                  v-model.number="form.property_id"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="" disabled>Selecione um imóvel</option>
-                  <option v-for="property in properties" :key="property.id" :value="property.id">
-                    {{ property.name }}
-                  </option>
-                </select>
+                <ServiceTypeSelect
+                  v-model="form.service_type_id"
+                  :options="serviceTypeOptions"
+                  label="Tipo de Serviço *"
+                  @update:modelValue="handleServiceTypeChange"
+                />
               </div>
             </div>
 
@@ -454,6 +485,15 @@
           <div v-else></div>
           <div class="flex space-x-3">
             <button
+              v-if="editingBooking && entryType !== 'cleaning'"
+              type="button"
+              @click="exportContract"
+              :disabled="contractDownloading"
+              class="px-4 py-2 border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition disabled:opacity-50"
+            >
+              {{ contractDownloading ? 'Gerando contrato...' : 'Exportar contrato' }}
+            </button>
+            <button
               type="button"
               @click="closeModal"
               class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
@@ -467,15 +507,6 @@
               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
             >
               {{ saving ? 'Salvando...' : 'Salvar' }}
-            </button>
-            <button
-              v-if="editingBooking && entryType !== 'cleaning'"
-              type="button"
-              @click="exportContract"
-              :disabled="contractDownloading"
-              class="px-4 py-2 border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition disabled:opacity-50"
-            >
-              {{ contractDownloading ? 'Gerando contrato...' : 'Exportar contrato' }}
             </button>
           </div>
         </div>
@@ -502,11 +533,13 @@
 
 <script>
 import axios from 'axios'
-import { router } from '../router.js'
+import { router, navigateTo } from '../router.js'
 import QuickPersonModal from './QuickPersonModal.vue'
+import QuickServiceTypeModal from './QuickServiceTypeModal.vue'
 import ConfirmationModal from './ConfirmationModal.vue'
 import SelectWithFilter from './SelectWithFilter.vue'
 import PersonSelect from './PersonSelect.vue'
+import ServiceTypeSelect from './ServiceTypeSelect.vue'
 import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
 import { useApi } from '../composables/useApi.js'
 import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
@@ -514,9 +547,11 @@ import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
 export default {
   components: {
     QuickPersonModal,
+    QuickServiceTypeModal,
     ConfirmationModal,
     SelectWithFilter,
-    PersonSelect
+    PersonSelect,
+    ServiceTypeSelect
   },
   data() {
     const { applyCurrencyMask, parseCurrencyToNumber, getWhatsAppLink } = useBrazilianMasks()
@@ -532,11 +567,12 @@ export default {
       isModalOpen: false,
       editingBooking: null,
       entryType: 'booking',
-      selectedPropertyId: '',
+      selectedPropertyId: null,
       customers: [],
       properties: [],
       sellers: [],
       cleaners: [],
+      serviceTypes: [],
       saving: false,
       deleteConfirmBooking: null,
       deleting: false,
@@ -547,6 +583,7 @@ export default {
         isOpen: false,
         type: null
       },
+      quickServiceTypeModalOpen: false,
       stateOptions: BRAZILIAN_STATES,
       monthNames: [
         'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -586,7 +623,7 @@ export default {
 
     sortedBookings() {
       let filtered = this.bookings
-      if (this.selectedPropertyId) {
+      if (this.selectedPropertyId !== null) {
         filtered = filtered.filter(b => b.property_id === this.selectedPropertyId)
       }
       return [...filtered].sort((a, b) => {
@@ -643,6 +680,13 @@ export default {
       const id = String(this.form.seller_id || '')
       if (!id) return null
       return this.sellers.find(s => String(s.id) === id) || null
+    },
+
+    serviceTypeOptions() {
+      return [
+        { value: 'new', label: '+ Novo Tipo de Serviço' },
+        ...this.serviceTypes.map(st => ({ value: String(st.id), label: st.name }))
+      ]
     }
   },
 
@@ -656,6 +700,14 @@ export default {
           router.params.stayId = null
         }
       }
+    },
+
+    currentMonth(newVal) {
+      this.loadServicesByMonth()
+    },
+
+    currentYear(newVal) {
+      this.loadServicesByMonth()
     }
   },
 
@@ -679,6 +731,7 @@ export default {
         customer_id: '',
         property_id: '',
         seller_id: '',
+        service_type_id: '',
         guest_name: '',
         guest_email: '',
         property_name: '',
@@ -700,16 +753,33 @@ export default {
     async loadData() {
       this.loading = true
       try {
-        const { getStays, getPeople, getProperties } = useApi()
+        const { getPeople, getProperties, getServiceTypes } = useApi()
         await Promise.all([
-          this.loadBookings(getStays),
+          this.loadServicesByMonth(),
           this.loadCustomers(getPeople),
           this.loadProperties(getProperties),
           this.loadSellers(getPeople),
-          this.loadCleaners(getPeople)
+          this.loadCleaners(getPeople),
+          this.loadServiceTypes(getServiceTypes)
         ])
       } finally {
         this.loading = false
+      }
+    },
+
+    async loadServicesByMonth() {
+      const startDate = new Date(this.currentYear, this.currentMonth, 1)
+      const endDate = new Date(this.currentYear, this.currentMonth + 1, 0)
+
+      const startDateString = startDate.toISOString().split('T')[0]
+      const endDateString = endDate.toISOString().split('T')[0]
+
+      try {
+        const { getServices } = useApi()
+        const { data, error } = await getServices(startDateString, endDateString)
+        if (!error) this.bookings = data
+      } catch (err) {
+        console.error('Error loading bookings by month:', err)
       }
     },
 
@@ -734,7 +804,13 @@ export default {
     async loadProperties(apiMethod) {
       try {
         const { data, error } = await apiMethod()
-        if (!error) this.properties = data
+        if (!error) {
+          this.properties = data
+          // Se há imóveis e nenhum está selecionado, selecionar o primeiro
+          if (this.properties.length > 0 && this.selectedPropertyId === null) {
+            this.selectedPropertyId = this.properties[0].id
+          }
+        }
       } catch (err) {
         console.error('Error loading properties:', err)
       }
@@ -758,9 +834,18 @@ export default {
       }
     },
 
+    async loadServiceTypes(apiMethod) {
+      try {
+        const { data, error } = await apiMethod()
+        if (!error) this.serviceTypes = data
+      } catch (err) {
+        console.error('Error loading service types:', err)
+      }
+    },
+
     getBookingsForDay(date) {
       let filtered = this.bookings
-      if (this.selectedPropertyId) {
+      if (this.selectedPropertyId !== null) {
         filtered = filtered.filter(b => b.property_id === this.selectedPropertyId)
       }
       return filtered.filter(booking => {
@@ -797,7 +882,11 @@ export default {
     },
 
     formatCurrencyDisplay(value) {
-      return value.toLocaleString('pt-BR', {
+      // Garantir que é um número
+      const numValue = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : parseFloat(value || 0)
+      
+      // Formatar com 2 casas decimais usando pt-BR locale
+      return numValue.toLocaleString('pt-BR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       })
@@ -859,11 +948,15 @@ export default {
       this.currentYear = today.getFullYear()
     },
 
+    navigateToProperties() {
+      navigateTo('properties')
+    },
+
     openCreateModal(type = 'booking') {
       this.entryType = type
       this.editingBooking = null
       this.form = this.getEmptyForm(type)
-      if (this.selectedPropertyId) {
+      if (this.selectedPropertyId !== null) {
         this.form.property_id = this.selectedPropertyId
       }
       this.formErrors = {}
@@ -874,6 +967,13 @@ export default {
       const type = booking.property_type === 'cleaning' ? 'cleaning' : 'booking'
       this.entryType = type
       this.editingBooking = booking
+      
+      // Função helper para formatar valor monetário
+      const formatMoneyValue = (value) => {
+        const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : parseFloat(value || 0)
+        return this.formatCurrencyDisplay(numValue)
+      }
+      
       this.form = {
         ...this.getEmptyForm(type),
         ...booking,
@@ -881,12 +981,13 @@ export default {
         property_id: booking.property_id || '',
         seller_id: booking.seller_id ? String(booking.seller_id) : '',
         property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
+        service_type_id: booking.service_type_id ? String(booking.service_type_id) : '',
         // Formatar valores monetários para exibição
-        total_due: this.formatCurrencyDisplay(booking.total_due || 0),
-        deposit_amount: this.formatCurrencyDisplay(booking.deposit_amount || 0),
-        final_amount: this.formatCurrencyDisplay(booking.final_amount || 0),
-        total_payable: this.formatCurrencyDisplay(booking.total_payable || 0),
-        total_paid: this.formatCurrencyDisplay(booking.total_paid || 0)
+        total_due: formatMoneyValue(booking.total_due),
+        deposit_amount: formatMoneyValue(booking.deposit_amount),
+        final_amount: formatMoneyValue(booking.final_amount),
+        total_payable: formatMoneyValue(booking.total_payable),
+        total_paid: formatMoneyValue(booking.total_paid)
       }
       this.isModalOpen = true
     },
@@ -895,6 +996,13 @@ export default {
       const type = booking.property_type === 'cleaning' ? 'cleaning' : 'booking'
       this.entryType = type
       this.editingBooking = booking
+      
+      // Função helper para formatar valor monetário
+      const formatMoneyValue = (value) => {
+        const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : parseFloat(value || 0)
+        return this.formatCurrencyDisplay(numValue)
+      }
+      
       this.form = {
         ...this.getEmptyForm(type),
         ...booking,
@@ -902,12 +1010,13 @@ export default {
         property_id: booking.property_id || '',
         seller_id: booking.seller_id ? String(booking.seller_id) : '',
         property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
+        service_type_id: booking.service_type_id ? String(booking.service_type_id) : '',
         // Formatar valores monetários para exibição
-        total_due: this.formatCurrencyDisplay(booking.total_due || 0),
-        deposit_amount: this.formatCurrencyDisplay(booking.deposit_amount || 0),
-        final_amount: this.formatCurrencyDisplay(booking.final_amount || 0),
-        total_payable: this.formatCurrencyDisplay(booking.total_payable || 0),
-        total_paid: this.formatCurrencyDisplay(booking.total_paid || 0)
+        total_due: formatMoneyValue(booking.total_due),
+        deposit_amount: formatMoneyValue(booking.deposit_amount),
+        final_amount: formatMoneyValue(booking.final_amount),
+        total_payable: formatMoneyValue(booking.total_payable),
+        total_paid: formatMoneyValue(booking.total_paid)
       }
       this.formErrors = {}
       this.isModalOpen = true
@@ -956,9 +1065,9 @@ export default {
 
         let result
         if (this.editingBooking) {
-          result = await put(`/api/v1/stays/${this.editingBooking.id}`, { stay: payload })
+          result = await put(`/api/v1/services/${this.editingBooking.id}`, { service: payload })
         } else {
-          result = await post('/api/v1/stays', { stay: payload })
+          result = await post('/api/v1/services', { service: payload })
         }
 
         if (result.error) {
@@ -967,7 +1076,7 @@ export default {
         }
 
         this.closeModal()
-        this.loadBookings(useApi().getStays)
+        this.loadServicesByMonth()
       } catch (err) {
         this.formErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao salvar locação'
       } finally {
@@ -1018,17 +1127,33 @@ export default {
       this.quickPersonModalOpen = { isOpen: false, type: null }
     },
 
+    handleServiceTypeChange(value) {
+      if (value === 'new') {
+        this.quickServiceTypeModalOpen = true
+        this.form.service_type_id = ''
+      }
+    },
+
+    handleQuickServiceTypeSave(serviceType) {
+      this.form.service_type_id = serviceType.id
+      this.loadServiceTypes(useApi().getServiceTypes)
+    },
+
+    closeQuickServiceTypeModal() {
+      this.quickServiceTypeModalOpen = false
+    },
+
     async deleteBooking() {
       this.deleting = true
 
       try {
         const { delete: deleteApi } = useApi()
-        const { error } = await deleteApi(`/api/v1/stays/${this.deleteConfirmBooking.id}`)
+        const { error } = await deleteApi(`/api/v1/services/${this.deleteConfirmBooking.id}`)
 
         if (!error) {
           this.deleteConfirmBooking = null
           this.closeModal()
-          this.loadBookings(useApi().getStays)
+          this.loadServicesByMonth()
         }
       } catch (err) {
         console.error('Error deleting booking:', err)

@@ -1,13 +1,13 @@
 <template>
   <CrudBase
-    title="Corretores"
-    singular-title="Corretor"
-    api-endpoint="/api/v1/people?type=Seller"
+    title="Prestadores de Serviço"
+    singular-title="Prestador de Serviço"
+    api-endpoint="/api/v1/people?type=Provider"
     :columns="columns"
     :form-fields="formFields"
   >
     <template #form="{ form, errors }">
-      <PersonForm :form="form" block-label="Corretor bloqueado" />
+      <PersonForm :form="form" block-label="Prestador de serviço bloqueado" />
     </template>
   </CrudBase>
 </template>
@@ -43,7 +43,7 @@ export default {
         rg: '',
         phone: '',
         email: '',
-        profession: 'Corretor',
+        profession: '',
         marital_status: '',
         city: '',
         state: '',
@@ -53,7 +53,7 @@ export default {
         zip: '',
         note: '',
         blocked: false,
-        type: 'Seller'
+        type: 'Provider'
       }
     }
   }

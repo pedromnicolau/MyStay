@@ -35,6 +35,8 @@ class Api::V1::PropertiesController < ApplicationController
   def destroy
     @property.destroy
     render json: { message: "Imóvel removido" }, status: :ok
+  rescue ActiveRecord::InvalidForeignKey => e
+    render_deletion_conflict_error
   end
 
   private
@@ -153,5 +155,41 @@ class Api::V1::PropertiesController < ApplicationController
     valid_ids = property_record.attachments.pluck(:id)
     filtered_order = Array(order).select { |id| valid_ids.include?(id.to_i) }
     property_record.update_column(:attachments_order, filtered_order)
+  end
+
+  def render_deletion_conflict_error
+    related_services = fetch_related_services
+    error_message = build_deletion_error_message(related_services.length)
+
+    render json: {
+      error: error_message,
+      message: "Por favor, primeiro remova ou atualize os serviços relacionados antes de excluir este imóvel.",
+      related_stays: format_services_for_response(related_services),
+      stays_count: related_services.length
+    }, status: :conflict
+  end
+
+  def fetch_related_services
+    Service.where(property_id: @property.id)
+        .select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date, :property_type)
+        .order(check_in_date: :desc)
+  end
+
+  def build_deletion_error_message(services_count)
+    "Não é possível excluir este imóvel pois existem #{services_count} serviço(s) vinculado(s) a ele."
+  end
+
+  def format_services_for_response(services)
+    services.map do |service|
+      {
+        id: service.id,
+        booking_reference: service.booking_reference,
+        guest_name: service.guest_name,
+        check_in_date: service.check_in_date,
+        check_out_date: service.check_out_date,
+        property_type: service.property_type,
+        is_cleaning: service.property_type == "cleaning"
+      }
+    end
   end
 end

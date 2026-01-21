@@ -173,6 +173,20 @@
         </div>
 
         <div class="md:col-span-2">
+          <label class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition cursor-pointer group">
+            <input
+              v-model="form.active"
+              type="checkbox"
+              class="w-5 h-5 text-indigo-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer group-hover:border-indigo-500"
+            />
+            <div class="ml-3">
+              <span class="text-sm font-semibold text-gray-700 block">Imóvel ativo</span>
+              <span class="text-xs text-gray-500">{{ form.active ? 'Visível para reservas' : 'Oculto do catálogo' }}</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-2">Anexos (imagens e vídeos)</label>
           <div class="space-y-3">
             <div v-if="existingAttachments(form).length || newAttachments(form).length" class="flex flex-wrap gap-1">
@@ -290,16 +304,6 @@
           </div>
         </div>
 
-        <div class="md:col-span-2">
-          <label class="flex items-center space-x-2">
-            <input
-              v-model="form.active"
-              type="checkbox"
-              class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <span class="text-sm font-medium text-gray-700">Imóvel ativo</span>
-          </label>
-        </div>
       </div>
     </template>
   </CrudBase>

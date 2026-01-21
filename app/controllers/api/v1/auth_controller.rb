@@ -52,6 +52,7 @@ class Api::V1::AuthController < ApplicationController
       :email,
       :password,
       :password_confirmation,
+      :cpf,
       :first_name,
       :last_name,
       :phone,
@@ -84,6 +85,7 @@ class Api::V1::AuthController < ApplicationController
     {
       id: user.id,
       email: user.email,
+      cpf: user.cpf,
       first_name: user.first_name,
       last_name: user.last_name,
       phone: user.phone,

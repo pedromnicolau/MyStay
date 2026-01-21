@@ -1,6 +1,43 @@
 class Api::V1::UsersController < ApplicationController
   skip_before_action :verify_authenticity_token
-  before_action :authenticate_user!, only: [ :profile, :update, :me, :update_me ]
+  before_action :authenticate_user!
+  before_action :set_user, only: [ :show, :update_user, :destroy ]
+
+  def index
+    users = User.order(created_at: :desc)
+    render json: users.map { |user| format_user(user) }, status: :ok
+  end
+
+  def show
+    render json: format_user(@user), status: :ok
+  end
+
+  def create
+    user = User.new(user_creation_params)
+    if user.save
+      render json: format_user(user), status: :created
+    else
+      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def update_user
+    if @user.update(user_update_params)
+      render json: format_user(@user), status: :ok
+    else
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @user.destroy
+    render json: { message: "Usuário removido" }, status: :ok
+  rescue ActiveRecord::InvalidForeignKey => e
+    render json: {
+      error: "Não é possível excluir este usuário pois existem registros vinculados a ele.",
+      message: "Por favor, primeiro remova ou atualize os registros relacionados antes de excluir este usuário."
+    }, status: :conflict
+  end
 
   def profile
     render json: format_user(current_user), status: :ok
@@ -46,11 +83,62 @@ class Api::V1::UsersController < ApplicationController
 
   private
 
+  def set_user
+    @user = User.find(params[:id])
+  end
+
+  def user_creation_params
+    params.require(:user).permit(
+      :first_name,
+      :last_name,
+      :email,
+      :cpf,
+      :phone,
+      :city,
+      :state,
+      :zip,
+      :address,
+      :number,
+      :neighborhood,
+      :profile_image,
+      :password,
+      :password_confirmation
+    )
+  end
+
+  def user_update_params
+    permitted = params.require(:user).permit(
+      :first_name,
+      :last_name,
+      :email,
+      :cpf,
+      :phone,
+      :city,
+      :state,
+      :zip,
+      :address,
+      :number,
+      :neighborhood,
+      :profile_image,
+      :password,
+      :password_confirmation
+    )
+
+    # Remove password fields if they're blank
+    if permitted[:password].blank?
+      permitted.delete(:password)
+      permitted.delete(:password_confirmation)
+    end
+
+    permitted
+  end
+
   def user_params
     params.require(:user).permit(
       :first_name,
       :last_name,
       :email,
+      :cpf,
       :phone,
       :city,
       :state,
@@ -67,6 +155,7 @@ class Api::V1::UsersController < ApplicationController
       :first_name,
       :last_name,
       :email,
+      :cpf,
       :phone,
       :city,
       :state,
@@ -93,6 +182,7 @@ class Api::V1::UsersController < ApplicationController
     {
       id: user.id,
       email: user.email,
+      cpf: user.cpf,
       first_name: user.first_name,
       last_name: user.last_name,
       phone: user.phone,

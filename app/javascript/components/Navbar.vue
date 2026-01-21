@@ -62,7 +62,28 @@
                   <i class="fa-solid fa-broom text-gray-500 mr-3"></i>
                   Faxineiras
                 </button>
+                <button
+                  @click="navigate('providers')"
+                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                >
+                  <i class="fa-solid fa-wrench text-gray-500 mr-3"></i>
+                  Prestadores de Serviço
+                </button>
+                <button
+                  @click="navigate('users')"
+                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                >
+                  <i class="fa-solid fa-users text-gray-500 mr-3"></i>
+                  Usuários
+                </button>
                 <div class="border-t border-gray-100 my-2"></div>
+                <button
+                  @click="navigate('service-types')"
+                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                >
+                  <i class="fa-solid fa-list text-gray-500 mr-3"></i>
+                  Tipos de Serviço
+                </button>
                 <button
                   @click="navigate('properties')"
                   class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
@@ -191,7 +212,28 @@
               <i class="fa-solid fa-broom text-gray-500 mr-2"></i>
               Faxineiras
             </button>
+            <button
+              @click="navigate('providers')"
+              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
+            >
+              <i class="fa-solid fa-wrench text-gray-500 mr-2"></i>
+              Prestadores de Serviço
+            </button>
+            <button
+              @click="navigate('users')"
+              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
+            >
+              <i class="fa-solid fa-users text-gray-500 mr-2"></i>
+              Usuários
+            </button>
             <div class="border-t border-gray-200 my-2"></div>
+            <button
+              @click="navigate('service-types')"
+              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
+            >
+              <i class="fa-solid fa-list text-gray-500 mr-2"></i>
+              Tipos de Serviço
+            </button>
             <button
               @click="navigate('properties')"
               class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"

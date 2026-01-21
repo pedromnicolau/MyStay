@@ -7,13 +7,19 @@ Rails.application.routes.draw do
       post "/auth/login", to: "auth#login"
       get "/auth/verify", to: "auth#verify"
 
-      resources :stays do
+      resources :services do
         member do
           get :contract
         end
       end
+      resources :service_types
       resources :people
       resources :properties
+      resources :users, except: [ :update ] do
+        member do
+          patch :update_user
+        end
+      end
       get "/users/profile", to: "users#profile"
       patch "/users/profile", to: "users#update"
       get "/me", to: "users#me"

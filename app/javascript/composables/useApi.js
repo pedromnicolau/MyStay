@@ -80,6 +80,17 @@ export function useApi() {
     return get('/api/v1/stays')
   }
 
+  const getServices = async (startDate = null, endDate = null) => {
+    if (startDate && endDate) {
+      return get(`/api/v1/services?start_date=${startDate}&end_date=${endDate}`)
+    }
+    return get('/api/v1/services')
+  }
+
+  const getServiceTypes = async () => {
+    return get('/api/v1/service_types')
+  }
+
   const getProperties = async () => {
     return get('/api/v1/properties')
   }
@@ -111,6 +122,8 @@ export function useApi() {
     // Convenience methods
     getPeople,
     getStays,
+    getServices,
+    getServiceTypes,
     getProperties,
     savePerson,
     saveStay,

@@ -43,7 +43,7 @@ export default {
         rg: '',
         phone: '',
         email: '',
-        profession: '',
+        profession: 'Faxineira',
         marital_status: '',
         city: '',
         state: '',

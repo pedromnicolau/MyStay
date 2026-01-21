@@ -170,33 +170,83 @@
               </svg>
               <div class="flex-1">
                 <h4 class="text-red-800 font-semibold mb-1">{{ deleteError }}</h4>
-                <p class="text-red-700 text-sm">{{ deleteErrorMessage }}</p>
+                <p class="text-red-700 text-sm mb-3">{{ deleteErrorMessage }}</p>
+                <div class="bg-white rounded-md p-3 border border-red-100">
+                  <p class="text-sm text-gray-700">
+                    <strong class="text-red-700">💡 Solução rápida:</strong> Use o botão de lixeira para excluir as locações diretamente, ou clique no nome para editá-las.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           <div v-if="relatedStays && relatedStays.length > 0" class="space-y-2">
             <p class="text-sm font-semibold text-gray-700 mb-2">
-              Estadias relacionadas ({{ relatedStays.length }}):
+              {{ relatedStays[0]?.is_cleaning !== undefined ? 'Locações' : 'Estadias' }} relacionadas ({{ relatedStays.length }}):
             </p>
             <div class="bg-gray-50 rounded-lg divide-y divide-gray-200">
               <div
                 v-for="stay in relatedStays"
                 :key="stay.id"
-                class="p-3 hover:bg-gray-100 transition cursor-pointer"
-                @click="goToStay(stay.id)"
+                class="p-3 group"
               >
-                <div class="flex items-center justify-between">
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">{{ stay.guest_name }}</p>
-                    <p class="text-xs text-gray-600">Reserva: {{ stay.booking_reference }}</p>
+                <div class="flex items-center justify-between gap-3">
+                  <div 
+                    class="flex-1 cursor-pointer hover:opacity-75 transition"
+                    @click="goToStay(stay.id)"
+                  >
+                    <div class="flex items-center gap-2 mb-1">
+                      <p class="text-sm font-medium text-gray-900">{{ stay.guest_name }}</p>
+                      <span
+                        v-if="stay.is_cleaning"
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
+                      >
+                        Faxina
+                      </span>
+                    </div>
+                    <p class="text-xs text-gray-600" v-if="stay.booking_reference">
+                      Reserva: {{ stay.booking_reference }}
+                    </p>
                     <p class="text-xs text-gray-500">
                       Check-in: {{ formatDate(stay.check_in_date) }} | Check-out: {{ formatDate(stay.check_out_date) }}
                     </p>
                   </div>
-                  <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                  </svg>
+                  <div class="flex items-center gap-2">
+                    <button
+                      @click="openDeleteRelatedStayConfirm(stay)"
+                      :disabled="deletingStayId === stay.id"
+                      class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
+                      title="Excluir locação"
+                    >
+                      <svg 
+                        v-if="deletingStayId !== stay.id"
+                        class="w-4 h-4" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <svg 
+                        v-else
+                        class="w-4 h-4 animate-spin" 
+                        fill="none" 
+                        viewBox="0 0 24 24"
+                      >
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </button>
+                    <button
+                      @click="goToStay(stay.id)"
+                      class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                      title="Ver detalhes"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -224,11 +274,28 @@
   </div>
 </template>
 
+<ConfirmationModal
+  :isOpen="!!relatedStayToDelete"
+  title="Excluir locação"
+  :message="`Tem certeza que deseja excluir a locação de ${relatedStayToDelete?.guest_name || ''}?`"
+  :details="relatedStayToDelete ? `Check-in: ${formatDate(relatedStayToDelete.check_in_date)}<br/>Check-out: ${formatDate(relatedStayToDelete.check_out_date)}` : ''"
+  confirmLabel="Excluir"
+  cancelLabel="Cancelar"
+  confirmButtonColor="red"
+  :loading="deletingStayId === (relatedStayToDelete && relatedStayToDelete.id)"
+  @confirm="confirmDeleteRelatedStay"
+  @cancel="cancelDeleteRelatedStay"
+/>
+
 <script>
 import axios from 'axios'
 import { navigateTo } from '../router.js'
+import ConfirmationModal from './ConfirmationModal.vue'
 
 export default {
+  components: {
+    ConfirmationModal
+  },
   props: {
     title: {
       type: String,
@@ -249,6 +316,11 @@ export default {
     formFields: {
       type: Object,
       required: true
+    },
+    customUpdateEndpoint: {
+      type: Function,
+      required: false,
+      default: null
     }
   },
 
@@ -266,7 +338,9 @@ export default {
       deleting: false,
       deleteError: null,
       deleteErrorMessage: null,
-      relatedStays: []
+      relatedStays: [],
+      deletingStayId: null,
+      relatedStayToDelete: null
     }
   },
 
@@ -350,7 +424,11 @@ export default {
         const requestConfig = useFormData ? { headers } : { headers }
 
         if (this.editingItem) {
-          await axios.put(`${baseEndpoint}/${this.editingItem.id}`, payload, requestConfig)
+          const updateEndpoint = this.customUpdateEndpoint 
+            ? this.customUpdateEndpoint(this.editingItem.id)
+            : `${baseEndpoint}/${this.editingItem.id}`
+          
+          await axios.patch(updateEndpoint, payload, requestConfig)
         } else {
           await axios.post(baseEndpoint, payload, requestConfig)
         }
@@ -454,6 +532,50 @@ export default {
     goToStay(stayId) {
       this.closeDeleteModal()
       navigateTo('bookings', { stayId })
+    },
+
+    openDeleteRelatedStayConfirm(stay) {
+      this.relatedStayToDelete = stay
+    },
+
+    async confirmDeleteRelatedStay() {
+      if (!this.relatedStayToDelete) return
+      await this.deleteRelatedStay(this.relatedStayToDelete.id)
+      this.relatedStayToDelete = null
+    },
+
+    cancelDeleteRelatedStay() {
+      this.relatedStayToDelete = null
+    },
+
+    async deleteRelatedStay(stayId) {
+      if (!confirm('Tem certeza que deseja excluir esta locação?')) {
+        return
+      }
+
+      this.deletingStayId = stayId
+
+      try {
+        const token = localStorage.getItem('token')
+        await axios.delete(`/api/v1/stays/${stayId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        // Remove a locação da lista
+        this.relatedStays = this.relatedStays.filter(stay => stay.id !== stayId)
+
+        // Se não há mais locações relacionadas, tenta excluir o item novamente
+        if (this.relatedStays.length === 0) {
+          this.deleteError = null
+          this.deleteErrorMessage = null
+          await this.deleteItem()
+        }
+      } catch (err) {
+        this.error = err.response?.data?.error || 'Erro ao excluir locação'
+        setTimeout(() => { this.error = null }, 3000)
+      } finally {
+        this.deletingStayId = null
+      }
     },
 
     formatDate(dateString) {

@@ -7,10 +7,13 @@
       <Customers v-else-if="currentRoute === 'customers'" />
       <Sellers v-else-if="currentRoute === 'sellers'" />
       <Cleaners v-else-if="currentRoute === 'cleaners'" />
+      <Providers v-else-if="currentRoute === 'providers'" />
       <Properties v-else-if="currentRoute === 'properties'" />
       <Bookings v-else-if="currentRoute === 'bookings'" />
       <Analysis v-else-if="currentRoute === 'analysis'" />
       <Profile v-else-if="currentRoute === 'profile'" :user="user" />
+      <Users v-else-if="currentRoute === 'users'" />
+      <ServiceTypes v-else-if="currentRoute === 'service-types'" />
     </div>
   </div>
 </template>
@@ -21,10 +24,13 @@ import Dashboard from './Dashboard.vue'
 import Customers from './Customers.vue'
 import Sellers from './Sellers.vue'
 import Cleaners from './Cleaners.vue'
+import Providers from './Providers.vue'
 import Properties from './Properties.vue'
 import Bookings from './Bookings.vue'
 import Analysis from './Analysis.vue'
 import Profile from './Profile.vue'
+import Users from './Users.vue'
+import ServiceTypes from './ServiceTypes.vue'
 import { router } from '../router.js'
 
 export default {
@@ -34,10 +40,13 @@ export default {
     Customers,
     Sellers,
     Cleaners,
+    Providers,
     Properties,
     Bookings,
     Analysis,
-    Profile
+    Profile,
+    Users,
+    ServiceTypes
   },
 
   props: {

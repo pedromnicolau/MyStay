@@ -1,7 +1,10 @@
 class Person < ApplicationRecord
-  belongs_to :user
+  self.inheritance_column = :_type_disabled
 
-  TYPES = %w[Customer Seller Cleaner].freeze
+  belongs_to :user
+  has_many :services, dependent: :nullify
+
+  TYPES = %w[Customer Seller Cleaner Provider].freeze
 
   validates :name, :phone, :type, presence: true
   validates :cpf, presence: true, uniqueness: true

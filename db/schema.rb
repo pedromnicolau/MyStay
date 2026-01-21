@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_19_135110) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_21_100400) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -103,7 +103,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_135110) do
     t.index ["user_id"], name: "index_properties_on_user_id"
   end
 
-  create_table "stays", force: :cascade do |t|
+  create_table "service_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "description"
+    t.index ["name"], name: "index_service_types_on_name", unique: true
+  end
+
+  create_table "services", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "property_name", null: false
     t.string "property_type"
@@ -135,11 +143,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_135110) do
     t.decimal "balance_payable", precision: 10, scale: 2
     t.text "guest_note"
     t.text "seller_note"
-    t.index ["booking_reference"], name: "index_stays_on_booking_reference", unique: true
-    t.index ["customer_id"], name: "index_stays_on_customer_id"
-    t.index ["property_id"], name: "index_stays_on_property_id"
-    t.index ["seller_id"], name: "index_stays_on_seller_id"
-    t.index ["user_id"], name: "index_stays_on_user_id"
+    t.bigint "service_type_id"
+    t.index ["booking_reference"], name: "index_services_on_booking_reference", unique: true
+    t.index ["customer_id"], name: "index_services_on_customer_id"
+    t.index ["property_id"], name: "index_services_on_property_id"
+    t.index ["seller_id"], name: "index_services_on_seller_id"
+    t.index ["service_type_id"], name: "index_services_on_service_type_id"
+    t.index ["user_id"], name: "index_services_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -157,6 +167,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_135110) do
     t.string "number"
     t.string "neighborhood"
     t.string "state"
+    t.string "cpf"
+    t.index ["cpf"], name: "index_users_on_cpf"
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
@@ -164,8 +176,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_19_135110) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "people", "users"
   add_foreign_key "properties", "users"
-  add_foreign_key "stays", "people", column: "customer_id"
-  add_foreign_key "stays", "people", column: "seller_id"
-  add_foreign_key "stays", "properties"
-  add_foreign_key "stays", "users"
+  add_foreign_key "services", "people", column: "customer_id"
+  add_foreign_key "services", "people", column: "seller_id"
+  add_foreign_key "services", "properties"
+  add_foreign_key "services", "service_types"
+  add_foreign_key "services", "users"
 end

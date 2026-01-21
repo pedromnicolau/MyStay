@@ -70,7 +70,21 @@
             <input
               v-model="form.phone"
               type="tel"
-              placeholder="Telefone"
+              inputmode="numeric"
+              @input="masks.handlePhoneMaskInput"
+              placeholder="(00) 00000-0000"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div v-if="!isLogin">
+            <label class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+            <input
+              v-model="form.cpf"
+              type="text"
+              inputmode="numeric"
+              @input="masks.handleCpfMaskInput"
+              placeholder="000.000.000-00"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
@@ -81,6 +95,17 @@
               v-model="form.password"
               type="password"
               placeholder="Senha"
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div v-if="!isLogin">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+            <input
+              v-model="form.password_confirmation"
+              type="password"
+              placeholder="Confirmar Senha"
               required
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -105,6 +130,7 @@
 
 <script>
 import axios from 'axios'
+import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
 
 export default {
   data() {
@@ -112,12 +138,15 @@ export default {
       isLogin: true,
       loading: false,
       error: '',
+      masks: useBrazilianMasks(),
       form: {
         email: '',
         password: '',
+        password_confirmation: '',
         first_name: '',
         last_name: '',
-        phone: ''
+        phone: '',
+        cpf: ''
       }
     }
   },
@@ -148,13 +177,20 @@ export default {
       this.error = ''
 
       try {
+        if (this.form.password !== this.form.password_confirmation) {
+          this.error = 'As senhas não coincidem.'
+          this.loading = false
+          return
+        }
         const response = await axios.post('/api/v1/auth/register', {
           user: {
             email: this.form.email,
             password: this.form.password,
+            password_confirmation: this.form.password_confirmation,
             first_name: this.form.first_name,
             last_name: this.form.last_name,
-            phone: this.form.phone
+            phone: this.form.phone,
+            cpf: this.form.cpf
           }
         })
 
@@ -176,9 +212,11 @@ export default {
       this.form = {
         email: '',
         password: '',
+        password_confirmation: '',
         first_name: '',
         last_name: '',
-        phone: ''
+        phone: '',
+        cpf: ''
       }
     }
   }
