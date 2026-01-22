@@ -19,7 +19,20 @@ pt-BR:
         invalid: "não é válido"
         required: "é obrigatório"
         record_invalid: "Validação falhou: %{errors}"
+        too_short: "é muito curto (mínimo %{count} caracteres)"
+        too_long: "é muito longo (máximo %{count} caracteres)"
       models:
+        user:
+          attributes:
+            email:
+              taken: "já está em uso"
+              blank: "não pode ficar em branco"
+              invalid: "não é válido"
+            password:
+              blank: "não pode ficar em branco"
+              too_short: "é muito curto (mínimo %{count} caracteres)"
+            password_confirmation:
+              confirmation: "não confere com a senha"
         person:
           attributes:
             cpf:
@@ -68,3 +81,31 @@ pt-BR:
         seller_note: "Observação do corretor"
         property_type: "Tipo de propriedade"
         description: "Descrição"
+      service:
+        property_name: "Nome do imóvel"
+        guest_name: "Nome do hóspede"
+        guest_email: "E-mail do hóspede"
+        check_in_date: "Data de entrada"
+        check_out_date: "Data de saída"
+        number_of_guests: "Número de hóspedes"
+        total_due: "Valor total a receber"
+        deposit_amount: "Valor do sinal"
+        final_amount: "Valor final"
+        balance_due: "Saldo a receber"
+        total_payable: "Valor total a pagar"
+        total_paid: "Valor total pago"
+        balance_payable: "Saldo a pagar"
+        guest_note: "Observação do hóspede"
+        seller_note: "Observação do corretor"
+        property_type: "Tipo de propriedade"
+        description: "Descrição"
+      user:
+        email: "E-mail"
+        password: "Senha"
+        password_confirmation: "Confirmação da senha"
+        first_name: "Nome"
+        last_name: "Sobrenome"
+        phone: "Telefone"
+      tenant:
+        name: "Nome do Tenant"
+        master_code: "Código Mestre"

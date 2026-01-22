@@ -1,8 +1,10 @@
 class Api::V1::AuthController < ApplicationController
   skip_before_action :verify_authenticity_token
+  before_action :authenticate_tenant!, only: [ :register, :login, :verify ]
 
   def register
     user = User.new(user_params)
+    user.tenant = current_tenant
     if user.save
       render json: {
         message: "User registered successfully",
@@ -15,7 +17,7 @@ class Api::V1::AuthController < ApplicationController
   end
 
   def login
-    user = User.find_by(email: params[:email])
+    user = User.find_by(email: params[:email], tenant_id: current_tenant.id)
     if user&.authenticate(params[:password])
       render json: {
         message: "Login successful",
@@ -31,7 +33,7 @@ class Api::V1::AuthController < ApplicationController
     token = request.headers["Authorization"]&.split(" ")&.last
     if token && decode_token(token)
       user_id = decode_token(token)
-      user = User.find_by(id: user_id)
+      user = User.find_by(id: user_id, tenant_id: current_tenant&.id)
       if user
         render json: {
           message: "Token valid",

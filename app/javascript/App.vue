@@ -1,18 +1,18 @@
 <template>
   <div id="app">
-    <Auth v-if="!isLoggedIn" @login="handleLogin" />
+    <Landing v-if="!isLoggedIn" @auth-success="handleAuthSuccess" />
     <Home v-else :user="currentUser" />
   </div>
 </template>
 
 <script>
-import Auth from './components/Auth.vue'
 import Home from './components/Home.vue'
+import Landing from './components/Landing.vue'
 
 export default {
   components: {
-    Auth,
-    Home
+    Home,
+    Landing
   },
 
   data() {
@@ -23,18 +23,17 @@ export default {
   },
 
   mounted() {
-    const token = localStorage.getItem('token')
+    const userToken = localStorage.getItem('userToken')
     const user = localStorage.getItem('user')
-    
-    if (token && user) {
+    if (userToken && user) {
       this.currentUser = JSON.parse(user)
       this.isLoggedIn = true
     }
   },
 
   methods: {
-    handleLogin(user) {
-      this.currentUser = user
+    handleAuthSuccess(data) {
+      this.currentUser = data.user
       this.isLoggedIn = true
     }
   }

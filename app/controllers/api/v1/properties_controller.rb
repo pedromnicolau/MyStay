@@ -170,7 +170,7 @@ class Api::V1::PropertiesController < ApplicationController
   end
 
   def fetch_related_services
-    Service.where(property_id: @property.id)
+    Service.where(property_id: @property.id, tenant_id: current_tenant.id)
         .select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date, :property_type)
         .order(check_in_date: :desc)
   end

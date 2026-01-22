@@ -7,6 +7,10 @@ Rails.application.routes.draw do
       post "/auth/login", to: "auth#login"
       get "/auth/verify", to: "auth#verify"
 
+      post "/tenants/register", to: "tenants#register"
+      post "/tenants/login", to: "tenants#login"
+      put "/tenant", to: "tenants#update"
+
       resources :services do
         member do
           get :contract

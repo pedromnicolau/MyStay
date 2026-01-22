@@ -166,8 +166,12 @@ export default {
 
     async loadStats() {
       try {
-        const token = localStorage.getItem('token')
-        const headers = { Authorization: `Bearer ${token}` }
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        const headers = {
+          Authorization: `Bearer ${userToken}`,
+          'Tenant-Authorization': `Bearer ${tenantToken}`
+        }
 
         const [customersRes, sellersRes, cleanersRes, propertiesRes] = await Promise.all([
           axios.get('/api/v1/people?type=Customer', { headers }),

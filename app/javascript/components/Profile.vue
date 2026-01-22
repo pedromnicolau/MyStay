@@ -70,72 +70,7 @@
             </div>
           </div>
 
-          <!-- Seção de Endereço -->
-          <div>
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Endereço</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
-                <input
-                  v-model="form.zip"
-                  @input="applyZipMask"
-                  type="text"
-                  placeholder="00000-000"
-                  maxlength="9"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                <input
-                  v-model="form.address"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Número</label>
-                <input
-                  v-model="form.number"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
-                <input
-                  v-model="form.neighborhood"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-                <input
-                  v-model="form.city"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select
-                  v-model="form.state"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">Selecione</option>
-                  <option v-for="state in stateOptions" :key="state.value" :value="state.value">
-                    {{ state.label }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
+          
 
           <!-- Seção de Segurança -->
           <div>
@@ -211,7 +146,6 @@
 <script>
 import { navigateTo } from '../router.js'
 import { useApi } from '../composables/useApi.js'
-import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
 import { useInputMasks } from '../composables/useInputMasks.js'
 
 export default {
@@ -229,12 +163,6 @@ export default {
         last_name: '',
         email: '',
         phone: '',
-        zip: '',
-        address: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
         current_password: '',
         password: '',
         password_confirmation: ''
@@ -242,7 +170,7 @@ export default {
       saving: false,
       successMessage: '',
       errors: {},
-      stateOptions: BRAZILIAN_STATES
+      stateOptions: []
     }
   },
 
@@ -258,12 +186,6 @@ export default {
         last_name: this.user.last_name || '',
         email: this.user.email || '',
         phone: this.user.phone || '',
-        zip: this.user.zip || '',
-        address: this.user.address || '',
-        number: this.user.number || '',
-        neighborhood: this.user.neighborhood || '',
-        city: this.user.city || '',
-        state: this.user.state || '',
         current_password: '',
         password: '',
         password_confirmation: ''
@@ -283,12 +205,6 @@ export default {
           last_name: userData.last_name || '',
           email: userData.email || '',
           phone: userData.phone || '',
-          zip: userData.zip || '',
-          address: userData.address || '',
-          number: userData.number || '',
-          neighborhood: userData.neighborhood || '',
-          city: userData.city || '',
-          state: userData.state || '',
           current_password: '',
           password: '',
           password_confirmation: ''

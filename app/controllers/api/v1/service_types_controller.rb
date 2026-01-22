@@ -6,7 +6,7 @@ module Api
       before_action :set_service_type, only: [ :show, :update, :destroy ]
 
       def index
-        @service_types = ServiceType.all
+        @service_types = ServiceType.where(tenant_id: current_tenant.id)
         render json: @service_types
       end
 
@@ -15,7 +15,7 @@ module Api
       end
 
       def create
-        @service_type = ServiceType.new(service_type_params)
+        @service_type = ServiceType.new(service_type_params.merge(tenant_id: current_tenant.id))
 
         if @service_type.save
           render json: @service_type, status: :created
@@ -40,7 +40,7 @@ module Api
       private
 
       def set_service_type
-        @service_type = ServiceType.find(params[:id])
+        @service_type = ServiceType.where(tenant_id: current_tenant.id).find(params[:id])
       end
 
       def service_type_params

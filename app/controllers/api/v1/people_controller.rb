@@ -63,9 +63,9 @@ class Api::V1::PeopleController < ApplicationController
   def fetch_related_services
     case @person.type
     when "Customer"
-      Service.where(customer_id: @person.id).select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date)
+      Service.where(customer_id: @person.id, tenant_id: current_tenant.id).select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date)
     when "Seller"
-      Service.where(seller_id: @person.id).select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date)
+      Service.where(seller_id: @person.id, tenant_id: current_tenant.id).select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date)
     else
       []
     end

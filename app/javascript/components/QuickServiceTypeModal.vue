@@ -104,11 +104,12 @@ export default {
       this.error = ''
 
       try {
-        const token = localStorage.getItem('token')
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
         const response = await axios.post(
           '/api/v1/service_types',
           { service_type: this.form },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` } }
         )
 
         this.$emit('save', response.data)

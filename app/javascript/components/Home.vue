@@ -12,6 +12,7 @@
       <Bookings v-else-if="currentRoute === 'bookings'" />
       <Analysis v-else-if="currentRoute === 'analysis'" />
       <Profile v-else-if="currentRoute === 'profile'" :user="user" />
+      <TenantSettings v-else-if="currentRoute === 'tenant-settings'" />
       <Users v-else-if="currentRoute === 'users'" />
       <ServiceTypes v-else-if="currentRoute === 'service-types'" />
     </div>
@@ -29,6 +30,7 @@ import Properties from './Properties.vue'
 import Bookings from './Bookings.vue'
 import Analysis from './Analysis.vue'
 import Profile from './Profile.vue'
+import TenantSettings from './TenantSettings.vue'
 import Users from './Users.vue'
 import ServiceTypes from './ServiceTypes.vue'
 import { router } from '../router.js'
@@ -45,6 +47,7 @@ export default {
     Bookings,
     Analysis,
     Profile,
+    TenantSettings,
     Users,
     ServiceTypes
   },

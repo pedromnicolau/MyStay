@@ -827,11 +827,12 @@ export default {
           }
         }
 
-        const token = localStorage.getItem('token')
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
         await axios.put(
           `/api/v1/properties/${this.$parent.editingItem.id}`,
           payload,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` } }
         )
       } catch (error) {
         console.error('Erro ao salvar ordem dos anexos:', error)

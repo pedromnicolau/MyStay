@@ -9,13 +9,17 @@ import axios from 'axios'
 export function useApi() {
   // Get auth token from localStorage
   const getToken = () => {
-    return localStorage.getItem('token')
+    return localStorage.getItem('userToken')
   }
 
   // Build default headers with authorization
   const getHeaders = () => {
     const token = getToken()
-    return token ? { Authorization: `Bearer ${token}` } : {}
+    const tenantToken = localStorage.getItem('tenantToken')
+    const headers = {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    if (tenantToken) headers['Tenant-Authorization'] = `Bearer ${tenantToken}`
+    return headers
   }
 
   // GET request
@@ -70,6 +74,36 @@ export function useApi() {
     }
   }
 
+  // POST request with FormData (for file uploads)
+  const postFormData = async (endpoint, formData) => {
+    try {
+      const headers = {
+        ...getHeaders(),
+        'Content-Type': 'multipart/form-data'
+      }
+      const response = await axios.post(endpoint, formData, { headers })
+      return { data: response.data, error: null }
+    } catch (error) {
+      console.error(`POST FormData ${endpoint} failed:`, error.message)
+      return { data: null, error }
+    }
+  }
+
+  // PUT request with FormData (for file uploads)
+  const putFormData = async (endpoint, formData) => {
+    try {
+      const headers = {
+        ...getHeaders(),
+        'Content-Type': 'multipart/form-data'
+      }
+      const response = await axios.put(endpoint, formData, { headers })
+      return { data: response.data, error: null }
+    } catch (error) {
+      console.error(`PUT FormData ${endpoint} failed:`, error.message)
+      return { data: null, error }
+    }
+  }
+
   // Convenience methods for common endpoints
   const getPeople = async (type = null) => {
     const url = type ? `/api/v1/people?type=${type}` : '/api/v1/people'
@@ -117,6 +151,8 @@ export function useApi() {
     post,
     put,
     delete: remove,
+    postFormData,
+    putFormData,
     getToken,
     getHeaders,
     // Convenience methods

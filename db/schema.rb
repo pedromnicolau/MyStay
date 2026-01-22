@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_21_100400) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_22_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -63,9 +63,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_21_100400) do
     t.datetime "updated_at", null: false
     t.string "number"
     t.string "state"
+    t.bigint "tenant_id", null: false
     t.index ["city"], name: "index_people_on_city"
-    t.index ["cpf"], name: "index_people_on_cpf", unique: true
-    t.index ["rg"], name: "index_people_on_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
+    t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_and_cpf", unique: true
+    t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_id_and_cpf"
+    t.index ["tenant_id", "rg"], name: "index_people_on_tenant_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
+    t.index ["tenant_id", "rg"], name: "index_people_on_tenant_id_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
+    t.index ["tenant_id"], name: "index_people_on_tenant_id"
     t.index ["type"], name: "index_people_on_type"
     t.index ["user_id"], name: "index_people_on_user_id"
   end
@@ -98,8 +102,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_21_100400) do
     t.boolean "wheelchair_accessible", default: false, null: false
     t.text "description"
     t.json "attachments_order", default: []
+    t.bigint "tenant_id", null: false
     t.index ["active"], name: "index_properties_on_active"
     t.index ["city"], name: "index_properties_on_city"
+    t.index ["tenant_id"], name: "index_properties_on_tenant_id"
     t.index ["user_id"], name: "index_properties_on_user_id"
   end
 
@@ -108,7 +114,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_21_100400) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "description"
-    t.index ["name"], name: "index_service_types_on_name", unique: true
+    t.bigint "tenant_id", null: false
+    t.index ["tenant_id", "name"], name: "index_service_types_on_tenant_and_name", unique: true
+    t.index ["tenant_id", "name"], name: "index_service_types_on_tenant_id_and_name"
+    t.index ["tenant_id"], name: "index_service_types_on_tenant_id"
   end
 
   create_table "services", force: :cascade do |t|
@@ -144,12 +153,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_21_100400) do
     t.text "guest_note"
     t.text "seller_note"
     t.bigint "service_type_id"
-    t.index ["booking_reference"], name: "index_services_on_booking_reference", unique: true
+    t.bigint "tenant_id", null: false
+    t.json "attachments_order", default: []
     t.index ["customer_id"], name: "index_services_on_customer_id"
     t.index ["property_id"], name: "index_services_on_property_id"
     t.index ["seller_id"], name: "index_services_on_seller_id"
     t.index ["service_type_id"], name: "index_services_on_service_type_id"
+    t.index ["tenant_id", "booking_reference"], name: "index_services_on_tenant_and_booking_reference", unique: true
+    t.index ["tenant_id", "booking_reference"], name: "index_services_on_tenant_id_and_booking_reference"
+    t.index ["tenant_id"], name: "index_services_on_tenant_id"
     t.index ["user_id"], name: "index_services_on_user_id"
+  end
+
+  create_table "tenants", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "master_code", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["master_code"], name: "index_tenants_on_master_code", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -168,17 +189,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_21_100400) do
     t.string "neighborhood"
     t.string "state"
     t.string "cpf"
+    t.bigint "tenant_id", null: false
     t.index ["cpf"], name: "index_users_on_cpf"
-    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["tenant_id", "email"], name: "index_users_on_tenant_and_email", unique: true
+    t.index ["tenant_id", "email"], name: "index_users_on_tenant_id_and_email"
+    t.index ["tenant_id"], name: "index_users_on_tenant_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "people", "tenants"
   add_foreign_key "people", "users"
+  add_foreign_key "properties", "tenants"
   add_foreign_key "properties", "users"
+  add_foreign_key "service_types", "tenants"
   add_foreign_key "services", "people", column: "customer_id"
   add_foreign_key "services", "people", column: "seller_id"
   add_foreign_key "services", "properties"
   add_foreign_key "services", "service_types"
+  add_foreign_key "services", "tenants"
   add_foreign_key "services", "users"
+  add_foreign_key "users", "tenants"
 end

@@ -458,6 +458,18 @@
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               ></textarea>
             </div>
+
+            <!-- Anexos -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Anexos</label>
+              <AttachmentManager
+                v-model="form.attachments"
+                v-model:remove-attachment-ids="form.remove_attachment_ids"
+                :accepted-types="'*'"
+                :enable-reorder="true"
+                :enable-lightbox="true"
+              />
+            </div>
           </div>
         </form>
 
@@ -540,6 +552,7 @@ import ConfirmationModal from './ConfirmationModal.vue'
 import SelectWithFilter from './SelectWithFilter.vue'
 import PersonSelect from './PersonSelect.vue'
 import ServiceTypeSelect from './ServiceTypeSelect.vue'
+import AttachmentManager from './AttachmentManager.vue'
 import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
 import { useApi } from '../composables/useApi.js'
 import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
@@ -551,7 +564,8 @@ export default {
     ConfirmationModal,
     SelectWithFilter,
     PersonSelect,
-    ServiceTypeSelect
+    ServiceTypeSelect,
+    AttachmentManager
   },
   data() {
     const { applyCurrencyMask, parseCurrencyToNumber, getWhatsAppLink } = useBrazilianMasks()
@@ -708,6 +722,19 @@ export default {
 
     currentYear(newVal) {
       this.loadServicesByMonth()
+    },
+
+    'form.attachments': {
+      handler(newVal) {
+        // Atualizar attachments_order com IDs dos anexos existentes na ordem atual
+        if (newVal && Array.isArray(newVal)) {
+          const attachmentIds = newVal
+            .filter(att => att && att.id)
+            .map(att => att.id)
+          this.form.attachments_order = attachmentIds
+        }
+      },
+      deep: true
     }
   },
 
@@ -746,7 +773,10 @@ export default {
         total_payable: '0,00',
         total_paid: '0,00',
         seller_note: '',
-        description: ''
+        description: '',
+        attachments: [],
+        remove_attachment_ids: [],
+        attachments_order: []
       }
     },
 
@@ -1023,6 +1053,17 @@ export default {
     },
 
     closeModal() {
+      // Liberar URLs de preview de novos arquivos (File/Blob)
+      if (this.form.attachments) {
+        this.form.attachments.forEach(item => {
+          const isFile = (typeof File !== 'undefined' && item instanceof File) ||
+            (typeof Blob !== 'undefined' && item instanceof Blob)
+          if (isFile && item.previewUrl) {
+            URL.revokeObjectURL(item.previewUrl)
+          }
+        })
+      }
+      
       this.isModalOpen = false
       this.editingBooking = null
       this.form = this.getEmptyForm()
@@ -1030,44 +1071,121 @@ export default {
       this.formErrors = {}
     },
 
+    buildServiceFormData() {
+      const isCleaning = this.entryType === 'cleaning'
+      
+      let selectedPerson
+      if (isCleaning) {
+        selectedPerson = this.cleaners.find(c => String(c.id) === String(this.form.customer_id))
+      } else {
+        selectedPerson = this.customers.find(c => String(c.id) === String(this.form.customer_id))
+      }
+      
+      const selectedProperty = this.properties.find(p => String(p.id) === String(this.form.property_id))
+      
+      // Verificar se há novos anexos (arquivos File/Blob)
+      const isFile = (item) => (typeof File !== 'undefined' && item instanceof File) ||
+        (typeof Blob !== 'undefined' && item instanceof Blob)
+      const newFiles = (this.form.attachments || []).filter(item => isFile(item))
+      const hasNewFiles = newFiles.length > 0
+      const hasRemovedAttachments = this.form.remove_attachment_ids && this.form.remove_attachment_ids.length > 0
+      const hasAttachmentsOrder = this.form.attachments_order && this.form.attachments_order.length > 0
+
+      // Dados do serviço/locação
+      const serviceData = {
+        customer_id: this.form.customer_id,
+        property_id: this.form.property_id,
+        seller_id: this.form.seller_id || null,
+        service_type_id: this.form.service_type_id || null,
+        guest_name: selectedPerson ? selectedPerson.name : this.form.guest_name,
+        guest_email: selectedPerson && selectedPerson.email ? selectedPerson.email : this.form.guest_email,
+        property_name: selectedProperty ? selectedProperty.name : this.form.property_name,
+        property_type: isCleaning ? 'cleaning' : (this.form.property_type || ''),
+        check_in_date: this.form.check_in_date,
+        check_out_date: this.form.check_out_date,
+        number_of_guests: this.form.number_of_guests,
+        total_due: this.parseCurrencyToNumber(this.form.total_due || '0'),
+        deposit_amount: this.parseCurrencyToNumber(this.form.deposit_amount || '0'),
+        final_amount: this.parseCurrencyToNumber(this.form.final_amount || '0'),
+        total_payable: this.parseCurrencyToNumber(this.form.total_payable || '0'),
+        total_paid: this.parseCurrencyToNumber(this.form.total_paid || '0'),
+        balance_due: this.calculateBalanceDue(),
+        balance_payable: this.calculateBalancePayable(),
+        guest_note: this.form.guest_note || '',
+        seller_note: this.form.seller_note || '',
+        description: this.form.description || ''
+      }
+
+      // Se vamos usar JSON (não FormData), adicionar arrays ao serviceData
+      if (!hasNewFiles && !hasRemovedAttachments && !hasAttachmentsOrder) {
+        return { useFormData: false, payload: serviceData }
+      }
+
+      // Para JSON, incluir arrays apenas se tiverem elementos
+      if (!hasNewFiles) {
+        if (hasRemovedAttachments) {
+          serviceData.remove_attachment_ids = this.form.remove_attachment_ids
+        }
+        if (hasAttachmentsOrder) {
+          serviceData.attachments_order = this.form.attachments_order
+        }
+        return { useFormData: false, payload: serviceData }
+      }
+
+      // Construir FormData para enviar arquivos
+      const formData = new FormData()
+      
+      // Adicionar todos os campos do serviço com prefixo 'service[]'
+      Object.keys(serviceData).forEach(key => {
+        const value = serviceData[key]
+        if (value !== null && value !== undefined && value !== '') {
+          formData.append(`service[${key}]`, value)
+        }
+      })
+
+      // Adicionar novos arquivos
+      newFiles.forEach((file) => {
+        formData.append('service[attachments][]', file, file.name)
+      })
+
+      // Adicionar IDs de anexos a remover
+      if (hasRemovedAttachments) {
+        this.form.remove_attachment_ids.forEach(id => {
+          formData.append('service[remove_attachment_ids][]', id)
+        })
+      }
+
+      // Adicionar ordem dos anexos
+      if (this.form.attachments_order && this.form.attachments_order.length > 0) {
+        this.form.attachments_order.forEach(id => {
+          formData.append('service[attachments_order][]', id)
+        })
+      }
+
+      return { useFormData: true, payload: formData }
+    },
+
     async saveBooking() {
       this.saving = true
       this.formErrors = {}
 
       try {
-        const { post, put } = useApi()
-        const isCleaning = this.entryType === 'cleaning'
-        
-        let selectedPerson
-        if (isCleaning) {
-          selectedPerson = this.cleaners.find(c => String(c.id) === String(this.form.customer_id))
-        } else {
-          selectedPerson = this.customers.find(c => String(c.id) === String(this.form.customer_id))
-        }
-        
-        const selectedProperty = this.properties.find(p => String(p.id) === String(this.form.property_id))
-        
-        // Converter valores mascarados para números antes de enviar
-        const payload = {
-          ...this.form,
-          guest_name: selectedPerson ? selectedPerson.name : this.form.guest_name,
-          guest_email: selectedPerson && selectedPerson.email ? selectedPerson.email : this.form.guest_email,
-          property_name: selectedProperty ? selectedProperty.name : this.form.property_name,
-          property_type: isCleaning ? 'cleaning' : (this.form.property_type || ''),
-          total_due: this.parseCurrencyToNumber(this.form.total_due || '0'),
-          deposit_amount: this.parseCurrencyToNumber(this.form.deposit_amount || '0'),
-          final_amount: this.parseCurrencyToNumber(this.form.final_amount || '0'),
-          total_payable: this.parseCurrencyToNumber(this.form.total_payable || '0'),
-          total_paid: this.parseCurrencyToNumber(this.form.total_paid || '0'),
-          balance_due: this.calculateBalanceDue(),
-          balance_payable: this.calculateBalancePayable()
-        }
+        const { post, put, postFormData, putFormData } = useApi()
+        const { useFormData, payload } = this.buildServiceFormData()
 
         let result
         if (this.editingBooking) {
-          result = await put(`/api/v1/services/${this.editingBooking.id}`, { service: payload })
+          if (useFormData) {
+            result = await putFormData(`/api/v1/services/${this.editingBooking.id}`, payload)
+          } else {
+            result = await put(`/api/v1/services/${this.editingBooking.id}`, { service: payload })
+          }
         } else {
-          result = await post('/api/v1/services', { service: payload })
+          if (useFormData) {
+            result = await postFormData('/api/v1/services', payload)
+          } else {
+            result = await post('/api/v1/services', { service: payload })
+          }
         }
 
         if (result.error) {

@@ -1,10 +1,13 @@
 class User < ApplicationRecord
+  belongs_to :tenant
+
   has_secure_password validations: false
   has_many :services, dependent: :destroy
+  has_many :stays, class_name: "Service", dependent: :destroy
   has_many :people, dependent: :destroy
   has_many :properties, dependent: :destroy
 
-  validates :email, presence: true, uniqueness: true
+  validates :email, presence: true, uniqueness: { scope: :tenant_id }
   validates :password, presence: true, on: :create
   validates :password, length: { minimum: 6 }, allow_blank: true
   validates :password_confirmation, presence: true, if: :password_present?

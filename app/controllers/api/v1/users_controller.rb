@@ -4,7 +4,7 @@ class Api::V1::UsersController < ApplicationController
   before_action :set_user, only: [ :show, :update_user, :destroy ]
 
   def index
-    users = User.order(created_at: :desc)
+    users = User.where(tenant_id: current_tenant.id).order(created_at: :desc)
     render json: users.map { |user| format_user(user) }, status: :ok
   end
 
@@ -13,7 +13,7 @@ class Api::V1::UsersController < ApplicationController
   end
 
   def create
-    user = User.new(user_creation_params)
+    user = User.new(user_creation_params.merge(tenant_id: current_tenant.id))
     if user.save
       render json: format_user(user), status: :created
     else
@@ -84,7 +84,7 @@ class Api::V1::UsersController < ApplicationController
   private
 
   def set_user
-    @user = User.find(params[:id])
+    @user = User.where(tenant_id: current_tenant.id).find(params[:id])
   end
 
   def user_creation_params
@@ -92,14 +92,7 @@ class Api::V1::UsersController < ApplicationController
       :first_name,
       :last_name,
       :email,
-      :cpf,
       :phone,
-      :city,
-      :state,
-      :zip,
-      :address,
-      :number,
-      :neighborhood,
       :profile_image,
       :password,
       :password_confirmation
@@ -111,14 +104,7 @@ class Api::V1::UsersController < ApplicationController
       :first_name,
       :last_name,
       :email,
-      :cpf,
       :phone,
-      :city,
-      :state,
-      :zip,
-      :address,
-      :number,
-      :neighborhood,
       :profile_image,
       :password,
       :password_confirmation
@@ -138,14 +124,7 @@ class Api::V1::UsersController < ApplicationController
       :first_name,
       :last_name,
       :email,
-      :cpf,
       :phone,
-      :city,
-      :state,
-      :zip,
-      :address,
-      :number,
-      :neighborhood,
       :profile_image
     )
   end
@@ -155,14 +134,7 @@ class Api::V1::UsersController < ApplicationController
       :first_name,
       :last_name,
       :email,
-      :cpf,
       :phone,
-      :city,
-      :state,
-      :zip,
-      :address,
-      :number,
-      :neighborhood,
       :profile_image,
       :current_password,
       :password,
@@ -182,16 +154,9 @@ class Api::V1::UsersController < ApplicationController
     {
       id: user.id,
       email: user.email,
-      cpf: user.cpf,
       first_name: user.first_name,
       last_name: user.last_name,
       phone: user.phone,
-      zip: user.zip,
-      address: user.address,
-      number: user.number,
-      neighborhood: user.neighborhood,
-      city: user.city,
-      state: user.state,
       profile_image: user.profile_image,
       created_at: user.created_at,
       updated_at: user.updated_at

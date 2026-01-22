@@ -363,9 +363,10 @@ export default {
       this.error = null
 
       try {
-        const token = localStorage.getItem('token')
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
         const response = await axios.get(this.apiEndpoint, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` }
         })
         
         this.items = Array.isArray(response.data) ? response.data : []
@@ -402,8 +403,9 @@ export default {
       this.formErrors = {}
 
       try {
-        const token = localStorage.getItem('token')
-        const headers = { Authorization: `Bearer ${token}` }
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        const headers = { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` }
         const resourceName = this.getResourceName()
         const baseEndpoint = this.apiEndpoint.split('?')[0]
 
@@ -506,10 +508,11 @@ export default {
       this.error = null
 
       try {
-        const token = localStorage.getItem('token')
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
         const baseEndpoint = this.apiEndpoint.split('?')[0]
         await axios.delete(`${baseEndpoint}/${this.deleteConfirmItem.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` }
         })
 
         this.closeDeleteModal()
@@ -556,9 +559,10 @@ export default {
       this.deletingStayId = stayId
 
       try {
-        const token = localStorage.getItem('token')
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
         await axios.delete(`/api/v1/stays/${stayId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` }
         })
 
         // Remove a locação da lista
