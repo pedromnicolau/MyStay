@@ -4,7 +4,7 @@ class Api::V1::PeopleController < ApplicationController
   before_action :set_person, only: [ :show, :update, :destroy ]
 
   def index
-    people = current_user.people.order(created_at: :desc)
+    people = current_user.people.with_attached_profile_image.order(created_at: :desc)
     people = people.where(type: params[:type]) if params[:type].present?
     render json: people, status: :ok
   end
@@ -45,7 +45,7 @@ class Api::V1::PeopleController < ApplicationController
 
   def person_params
     params.require(:person).permit(:name, :cpf, :rg, :phone, :email, :profession, :marital_status,
-                                   :city, :state, :address, :number, :neighborhood, :zip, :note, :blocked, :comments, :type)
+                                   :city, :state, :address, :number, :neighborhood, :zip, :note, :blocked, :comments, :type, :profile_image)
   end
 
   def render_deletion_conflict_error

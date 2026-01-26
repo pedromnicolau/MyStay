@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_22_000000) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_26_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -64,6 +64,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_22_000000) do
     t.string "number"
     t.string "state"
     t.bigint "tenant_id", null: false
+    t.string "profile_image"
     t.index ["city"], name: "index_people_on_city"
     t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_and_cpf", unique: true
     t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_id_and_cpf"
@@ -155,6 +156,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_22_000000) do
     t.bigint "service_type_id"
     t.bigint "tenant_id", null: false
     t.json "attachments_order", default: []
+    t.string "type", default: "Service", null: false
     t.index ["customer_id"], name: "index_services_on_customer_id"
     t.index ["property_id"], name: "index_services_on_property_id"
     t.index ["seller_id"], name: "index_services_on_seller_id"
@@ -162,6 +164,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_22_000000) do
     t.index ["tenant_id", "booking_reference"], name: "index_services_on_tenant_and_booking_reference", unique: true
     t.index ["tenant_id", "booking_reference"], name: "index_services_on_tenant_id_and_booking_reference"
     t.index ["tenant_id"], name: "index_services_on_tenant_id"
+    t.index ["type"], name: "index_services_on_type"
     t.index ["user_id"], name: "index_services_on_user_id"
   end
 

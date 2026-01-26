@@ -58,7 +58,23 @@
                     :key="column.key"
                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                   >
-                    <template v-if="column.format">
+                    <template v-if="column.key === 'profile_image'">
+                      <div class="flex items-center">
+                        <div 
+                          v-if="item[column.key]"
+                          class="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-indigo-100 to-indigo-200 border-2 border-indigo-300 flex items-center justify-center flex-shrink-0"
+                        >
+                          <img 
+                            :src="item[column.key]" 
+                            :alt="item.name || 'Foto'"
+                            class="w-full h-full object-cover"
+                            @error="$event.target.style.display='none'"
+                          />
+                        </div>
+                        <span v-else class="text-gray-400 text-xs">Sem foto</span>
+                      </div>
+                    </template>
+                    <template v-else-if="column.format">
                       {{ column.format(item[column.key], item) }}
                     </template>
                     <template v-else>
@@ -415,7 +431,7 @@ export default {
           const value = this.form[key]
           if (value === undefined) continue
 
-          const normalizedValue = this.normalizeValueForPayload(key, value)
+          const normalizedValue = await this.normalizeValueForPayload(key, value)
           if (normalizedValue !== undefined) {
             cleanedForm[key] = normalizedValue
           }
@@ -450,7 +466,27 @@ export default {
         return fileOnly.length > 0 ? fileOnly : undefined
       }
 
+      // Converter Data URL para Blob para foto de perfil
+      if (key === 'profile_image' && typeof value === 'string' && value.startsWith('data:')) {
+        return this.dataUrlToBlob(value)
+      }
+
+      // Se profile_image é uma URL HTTP (imagem existente), não enviar (não mudou)
+      if (key === 'profile_image' && typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/'))) {
+        return undefined
+      }
+
+      // Se profile_image é string vazia, não enviar
+      if (key === 'profile_image' && value === '') {
+        return undefined
+      }
+
       return value
+    },
+
+    async dataUrlToBlob(dataUrl) {
+      const response = await fetch(dataUrl)
+      return response.blob()
     },
 
     formNeedsMultipart(cleanedForm) {

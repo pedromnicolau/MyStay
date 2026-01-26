@@ -1,14 +1,19 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Botão Voltar alinhado com Navbar (fora do fluxo de layout) -->
+    <div class="fixed max-w-7xl w-full px-4 sm:px-6 lg:px-8 pt-8 left-0 right-0 mx-auto z-40">
+      <button @click="goBack" class="flex items-center space-x-2 text-indigo-600 hover:text-indigo-700 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>Voltar</span>
+      </button>
+    </div>
+
+    <!-- Conteúdo principal centralizado -->
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="mb-8">
-        <button @click="goBack" class="flex items-center space-x-2 text-indigo-600 hover:text-indigo-700 mb-4 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          <span>Voltar</span>
-        </button>
         <h1 class="text-3xl font-bold text-gray-900">Meu Perfil</h1>
         <p class="text-gray-600 mt-2">Atualize suas informações pessoais</p>
       </div>
@@ -16,6 +21,16 @@
       <!-- Formulário -->
       <div class="bg-white rounded-lg shadow-sm p-6">
         <form @submit.prevent="saveProfile" class="space-y-6">
+          <!-- Seção de Foto de Perfil -->
+          <div>
+            <ProfilePhotoUpload 
+              v-model="form.profile_image"
+              :name="`${form.first_name} ${form.last_name}`"
+              @upload-success="handlePhotoUploadSuccess"
+              @upload-error="handlePhotoUploadError"
+            />
+          </div>
+
           <!-- Seção de Informações Pessoais -->
           <div>
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Informações Pessoais</h2>
@@ -147,8 +162,15 @@
 import { navigateTo } from '../router.js'
 import { useApi } from '../composables/useApi.js'
 import { useInputMasks } from '../composables/useInputMasks.js'
+import ProfilePhotoUpload from './ProfilePhotoUpload.vue'
+
+const { applyPhoneMask } = useInputMasks()
 
 export default {
+  components: {
+    ProfilePhotoUpload
+  },
+  emits: ['user-updated'],
   props: {
     user: {
       type: Object,
@@ -163,6 +185,7 @@ export default {
         last_name: '',
         email: '',
         phone: '',
+        profile_image: '',
         current_password: '',
         password: '',
         password_confirmation: ''
@@ -186,6 +209,7 @@ export default {
         last_name: this.user.last_name || '',
         email: this.user.email || '',
         phone: this.user.phone || '',
+        profile_image: this.user.profile_image || '',
         current_password: '',
         password: '',
         password_confirmation: ''
@@ -205,6 +229,7 @@ export default {
           last_name: userData.last_name || '',
           email: userData.email || '',
           phone: userData.phone || '',
+          profile_image: userData.profile_image || '',
           current_password: '',
           password: '',
           password_confirmation: ''
@@ -222,23 +247,42 @@ export default {
       this.successMessage = ''
 
       try {
-        const { put } = useApi()
-        const payload = { ...this.form }
+        const { put, upload } = useApi()
+        const formData = new FormData()
 
-        // Remove senhas vazias do payload
-        if (!payload.current_password) {
-          delete payload.current_password
+        // Adicionar dados do usuário
+        formData.append('user[first_name]', this.form.first_name)
+        formData.append('user[last_name]', this.form.last_name)
+        formData.append('user[email]', this.form.email)
+        formData.append('user[phone]', this.form.phone)
+
+        // Adicionar senhas se fornecidas
+        if (this.form.current_password) {
+          formData.append('user[current_password]', this.form.current_password)
         }
-        if (!payload.password) {
-          delete payload.password
+        if (this.form.password) {
+          formData.append('user[password]', this.form.password)
         }
-        if (!payload.password_confirmation) {
-          delete payload.password_confirmation
+        if (this.form.password_confirmation) {
+          formData.append('user[password_confirmation]', this.form.password_confirmation)
         }
 
-        const { data, error } = await put('/api/v1/me', { user: payload })
+        // Converter Data URL para Blob e adicionar à foto
+        if (this.form.profile_image && this.form.profile_image.startsWith('data:')) {
+          console.log('Convertendo Data URL para Blob...')
+          const blob = await this.dataUrlToBlob(this.form.profile_image)
+          console.log('Blob criado com sucesso:', blob)
+          formData.append('user[profile_image]', blob, 'profile.jpg')
+          console.log('Blob adicionado ao FormData')
+        } else if (this.form.profile_image) {
+          console.log('Foto não é Data URL (pode ser URL HTTP já existente):', this.form.profile_image.substring(0, 50))
+        }
+
+        console.log('Enviando PATCH para /api/v1/me com FormData')
+        const { data, error } = await upload('/api/v1/me', formData)
 
         if (error) {
+          console.error('Erro ao salvar perfil:', error)
           const errorList = error.response?.data?.errors
           if (Array.isArray(errorList)) {
             this.errors.general = errorList.join(', ')
@@ -251,8 +295,19 @@ export default {
           return
         }
 
-        // Atualiza o usuário no localStorage
+        console.log('Resposta do servidor:', data)
         localStorage.setItem('user', JSON.stringify(data))
+        this.form = {
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          profile_image: data.profile_image || '',
+          current_password: '',
+          password: '',
+          password_confirmation: ''
+        }
+        this.$emit('user-updated', data)
 
         this.successMessage = 'Perfil atualizado com sucesso!'
         setTimeout(() => {
@@ -260,9 +315,31 @@ export default {
         }, 3000)
       } catch (err) {
         this.errors.general = 'Erro ao salvar perfil'
+        console.error('Erro ao salvar perfil:', err)
       } finally {
         this.saving = false
       }
+    },
+
+    async dataUrlToBlob(dataUrl) {
+      const response = await fetch(dataUrl)
+      return response.blob()
+    },
+
+    handlePhotoUploadSuccess(payload) {
+      if (payload.user) {
+        this.form.profile_image = payload.user.profile_image || payload.url || ''
+        this.$emit('user-updated', payload.user)
+      }
+    },
+
+    handlePhotoUploadError(error) {
+      this.errors.photo = 'Erro ao processar foto de perfil'
+      console.error('Erro ao fazer upload da foto:', error)
+    },
+
+    applyPhoneMask(e) {
+      this.form.phone = applyPhoneMask(e.target.value)
     },
 
     goBack() {

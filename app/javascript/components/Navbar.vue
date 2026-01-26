@@ -117,8 +117,9 @@
               @click="toggleDropdown"
               class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 focus:outline-none transition"
             >
-              <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm hover:shadow-md transition-shadow">
-                {{ userInitials }}
+              <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-white bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+                <img v-if="userAvatar" :src="userAvatar" alt="Avatar" class="w-full h-full object-cover" style="min-width:100%;min-height:100%;object-fit:cover;object-position:center;" />
+                <span v-else>{{ userInitials }}</span>
               </div>
               <span class="hidden sm:block text-sm font-medium truncate max-w-xs">{{ userName }}</span>
               <svg
@@ -301,7 +302,11 @@ export default {
       if (this.user.first_name && this.user.last_name) {
         return `${this.user.first_name[0]}${this.user.last_name[0]}`.toUpperCase()
       }
-      return this.user.email[0].toUpperCase()
+      return this.user.email[0]?.toUpperCase() || ''
+    },
+
+    userAvatar() {
+      return this.user.profile_image || ''
     }
   },
 

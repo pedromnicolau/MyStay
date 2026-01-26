@@ -22,18 +22,8 @@
       </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="pt-24 px-4 pb-12">
-      <div class="max-w-4xl mx-auto">
-        <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12">
-          <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Página de vendas MyStay</h1>
-          <p class="text-lg text-gray-600 leading-relaxed">
-            MyStay é uma plataforma completa para gerenciar seus imóveis alugados, desde o cadastro de propriedades 
-            até o controle de locações e equipe. Simplifique sua vida com nosso sistema profissional.
-          </p>
-        </div>
-      </div>
-    </div>
+    <!-- Property Showcase -->
+    <PropertyShowcase />
 
     <!-- Login Modal -->
     <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
@@ -68,9 +58,10 @@
 <script>
 import TenantLogin from './TenantLogin.vue'
 import TenantRegister from './TenantRegister.vue'
+import PropertyShowcase from './PropertyShowcase.vue'
 
 export default {
-  components: { TenantLogin, TenantRegister },
+  components: { TenantLogin, TenantRegister, PropertyShowcase },
   emits: ['auth-success'],
   
   data() {

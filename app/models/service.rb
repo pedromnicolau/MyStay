@@ -51,5 +51,3 @@ class Service < ApplicationRecord
     end
   end
 end
-
-Stay = Service

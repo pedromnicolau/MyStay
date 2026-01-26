@@ -4,7 +4,7 @@ class Api::V1::UsersController < ApplicationController
   before_action :set_user, only: [ :show, :update_user, :destroy ]
 
   def index
-    users = User.where(tenant_id: current_tenant.id).order(created_at: :desc)
+    users = User.where(tenant_id: current_tenant.id).with_attached_profile_image.order(created_at: :desc)
     render json: users.map { |user| format_user(user) }, status: :ok
   end
 
@@ -157,7 +157,7 @@ class Api::V1::UsersController < ApplicationController
       first_name: user.first_name,
       last_name: user.last_name,
       phone: user.phone,
-      profile_image: user.profile_image,
+      profile_image: user.profile_image.attached? ? url_for(user.profile_image) : nil,
       created_at: user.created_at,
       updated_at: user.updated_at
     }

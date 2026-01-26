@@ -77,10 +77,9 @@ export function useApi() {
   // POST request with FormData (for file uploads)
   const postFormData = async (endpoint, formData) => {
     try {
-      const headers = {
-        ...getHeaders(),
-        'Content-Type': 'multipart/form-data'
-      }
+      // Don't set Content-Type, let axios handle it - it will add the boundary
+      const headers = getHeaders()
+      console.log('POST FormData to:', endpoint, 'Headers:', headers)
       const response = await axios.post(endpoint, formData, { headers })
       return { data: response.data, error: null }
     } catch (error) {
@@ -89,19 +88,42 @@ export function useApi() {
     }
   }
 
+  // PATCH request with FormData (for file uploads)
+  const patchFormData = async (endpoint, formData) => {
+    try {
+      // Don't set Content-Type, let axios handle it - it will add the boundary
+      const headers = getHeaders()
+      console.log('PATCH FormData to:', endpoint, 'Headers:', headers)
+      const response = await axios.patch(endpoint, formData, { headers })
+      console.log('PATCH FormData response:', response.data)
+      return { data: response.data, error: null }
+    } catch (error) {
+      console.error(`PATCH FormData ${endpoint} failed:`, error.message)
+      return { data: null, error }
+    }
+  }
+
   // PUT request with FormData (for file uploads)
   const putFormData = async (endpoint, formData) => {
     try {
-      const headers = {
-        ...getHeaders(),
-        'Content-Type': 'multipart/form-data'
-      }
+      // Don't set Content-Type, let axios handle it - it will add the boundary
+      const headers = getHeaders()
+      console.log('PUT FormData to:', endpoint, 'Headers:', headers)
       const response = await axios.put(endpoint, formData, { headers })
+      console.log('PUT FormData response:', response.data)
       return { data: response.data, error: null }
     } catch (error) {
       console.error(`PUT FormData ${endpoint} failed:`, error.message)
       return { data: null, error }
     }
+  }
+
+  // Generic upload method (uses PUT or PATCH with FormData)
+  const upload = async (endpoint, formData, method = 'patch') => {
+    if (method === 'put') {
+      return putFormData(endpoint, formData)
+    }
+    return patchFormData(endpoint, formData)
   }
 
   // Convenience methods for common endpoints
@@ -153,6 +175,8 @@ export function useApi() {
     delete: remove,
     postFormData,
     putFormData,
+    patchFormData,
+    upload,
     getToken,
     getHeaders,
     // Convenience methods

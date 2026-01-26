@@ -2,7 +2,8 @@ class Property < ApplicationRecord
   belongs_to :tenant
   belongs_to :user
   has_many_attached :attachments, dependent: :purge_later
-  has_many :services, dependent: :nullify
+  has_many :services, -> { where(type: "Service") }, dependent: :nullify
+  has_many :stays, class_name: "Stay", dependent: :nullify
 
   validates :name, presence: true
   validates :active, inclusion: { in: [ true, false ] }

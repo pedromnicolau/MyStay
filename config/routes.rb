@@ -11,6 +11,10 @@ Rails.application.routes.draw do
       post "/tenants/login", to: "tenants#login"
       put "/tenant", to: "tenants#update"
 
+      # Public properties endpoint (no authentication required)
+      get "/properties/public/showcase", to: "public_properties#showcase"
+      get "/properties/public/:id", to: "public_properties#show"
+
       resources :services do
         member do
           get :contract
