@@ -127,8 +127,15 @@ export function useApi() {
   }
 
   // Convenience methods for common endpoints
-  const getPeople = async (type = null) => {
-    const url = type ? `/api/v1/people?type=${type}` : '/api/v1/people'
+  const getPeople = async (role = null) => {
+    const roleMap = {
+      Customer: 'customer',
+      Seller: 'agent',
+      Cleaner: 'provider',
+      Provider: 'provider'
+    }
+    const normalizedRole = role ? (roleMap[role] || String(role).toLowerCase()) : null
+    const url = normalizedRole ? `/api/v1/people?role=${normalizedRole}` : '/api/v1/people'
     return get(url)
   }
 
@@ -138,9 +145,9 @@ export function useApi() {
 
   const getServices = async (startDate = null, endDate = null) => {
     if (startDate && endDate) {
-      return get(`/api/v1/services?start_date=${startDate}&end_date=${endDate}`)
+      return get(`/api/v1/movements?start_date=${startDate}&end_date=${endDate}`)
     }
-    return get('/api/v1/services')
+    return get('/api/v1/movements')
   }
 
   const getServiceTypes = async () => {

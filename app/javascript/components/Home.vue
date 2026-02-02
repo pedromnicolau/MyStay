@@ -4,10 +4,7 @@
     
     <div class="pt-16">
       <Dashboard v-if="currentRoute === 'dashboard'" />
-      <Customers v-else-if="currentRoute === 'customers'" />
-      <Sellers v-else-if="currentRoute === 'sellers'" />
-      <Cleaners v-else-if="currentRoute === 'cleaners'" />
-      <Providers v-else-if="currentRoute === 'providers'" />
+      <People v-else-if="currentRoute === 'people'" />
       <Properties v-else-if="currentRoute === 'properties'" />
       <Bookings v-else-if="currentRoute === 'bookings'" />
       <Analysis v-else-if="currentRoute === 'analysis'" />
@@ -27,10 +24,7 @@
 <script>
 import Navbar from './Navbar.vue'
 import Dashboard from './Dashboard.vue'
-import Customers from './Customers.vue'
-import Sellers from './Sellers.vue'
-import Cleaners from './Cleaners.vue'
-import Providers from './Providers.vue'
+import People from './People.vue'
 import Properties from './Properties.vue'
 import Bookings from './Bookings.vue'
 import Analysis from './Analysis.vue'
@@ -45,10 +39,7 @@ export default {
   components: {
     Navbar,
     Dashboard,
-    Customers,
-    Sellers,
-    Cleaners,
-    Providers,
+    People,
     Properties,
     Bookings,
     Analysis,

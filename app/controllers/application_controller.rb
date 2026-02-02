@@ -44,7 +44,7 @@ class ApplicationController < ActionController::Base
     token = request.headers["Tenant-Authorization"]&.split(" ")&.last
     tenant_id = decode_tenant_token(token) if token
     @current_tenant = Tenant.find_by(id: tenant_id)
-    render json: { error: "Tenant Unauthorized" }, status: :unauthorized unless @current_tenant
+    render json: { error: "Tenant não autorizado" }, status: :unauthorized unless @current_tenant
   end
 
   def authenticate_user!
@@ -58,7 +58,7 @@ class ApplicationController < ActionController::Base
     @current_tenant = Tenant.find_by(id: tenant_id)
 
     unless @current_user && @current_tenant && @current_user.tenant_id == @current_tenant.id
-      render json: { error: "Unauthorized" }, status: :unauthorized and return
+      render json: { error: "Não autorizado" }, status: :unauthorized and return
     end
   end
 

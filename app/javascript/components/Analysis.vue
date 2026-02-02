@@ -122,7 +122,7 @@
                 <tr v-for="booking in filteredBookings" :key="booking.id" class="hover:bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span
-                      v-if="booking.property_type === 'cleaning'"
+                      v-if="booking.type === 'Service'"
                       class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium"
                     >
                       Faxina
@@ -241,9 +241,9 @@ export default {
     filteredBookings() {
       if (this.filterType === 'all') return this.bookings
       if (this.filterType === 'cleaning') {
-        return this.bookings.filter(b => b.property_type === 'cleaning')
+        return this.bookings.filter(b => b.type === 'Service')
       }
-      return this.bookings.filter(b => b.property_type !== 'cleaning')
+      return this.bookings.filter(b => b.type !== 'Service')
     },
 
     totals() {
@@ -270,11 +270,11 @@ export default {
     },
 
     bookingCount() {
-      return this.bookings.filter(b => b.property_type !== 'cleaning').length
+      return this.bookings.filter(b => b.type !== 'Service').length
     },
 
     cleaningCount() {
-      return this.bookings.filter(b => b.property_type === 'cleaning').length
+      return this.bookings.filter(b => b.type === 'Service').length
     },
 
     averageMargin() {

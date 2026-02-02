@@ -1,2 +1,2 @@
-class Stay < Service
+class Stay < Movement
 end

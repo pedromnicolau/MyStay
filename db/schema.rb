@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_26_000000) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_31_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,43 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_000000) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "movements", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.date "check_in_date", null: false
+    t.date "check_out_date", null: false
+    t.integer "number_of_guests"
+    t.decimal "price_per_night", precision: 10, scale: 2
+    t.decimal "total_price", precision: 10, scale: 2
+    t.string "currency", default: "USD"
+    t.text "description"
+    t.string "address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "customer_id"
+    t.bigint "property_id"
+    t.bigint "seller_id"
+    t.decimal "total_due", precision: 10, scale: 2
+    t.decimal "deposit_amount", precision: 10, scale: 2
+    t.decimal "final_amount", precision: 10, scale: 2
+    t.decimal "balance_due", precision: 10, scale: 2
+    t.decimal "total_payable", precision: 10, scale: 2
+    t.decimal "total_paid", precision: 10, scale: 2
+    t.decimal "balance_payable", precision: 10, scale: 2
+    t.text "guest_note"
+    t.text "seller_note"
+    t.bigint "service_type_id"
+    t.bigint "tenant_id", null: false
+    t.json "attachments_order", default: []
+    t.string "type", default: "Service", null: false
+    t.index ["customer_id"], name: "index_movements_on_customer_id"
+    t.index ["property_id"], name: "index_movements_on_property_id"
+    t.index ["seller_id"], name: "index_movements_on_seller_id"
+    t.index ["service_type_id"], name: "index_movements_on_service_type_id"
+    t.index ["tenant_id"], name: "index_movements_on_tenant_id"
+    t.index ["type"], name: "index_movements_on_type"
+    t.index ["user_id"], name: "index_movements_on_user_id"
+  end
+
   create_table "people", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "name", null: false
@@ -58,20 +95,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_000000) do
     t.string "note"
     t.boolean "blocked", default: false
     t.text "comments"
-    t.string "type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "number"
     t.string "state"
     t.bigint "tenant_id", null: false
     t.string "profile_image"
+    t.boolean "customer", default: false, null: false
+    t.boolean "provider", default: false, null: false
+    t.boolean "agent", default: false, null: false
     t.index ["city"], name: "index_people_on_city"
     t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_and_cpf", unique: true
     t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_id_and_cpf"
     t.index ["tenant_id", "rg"], name: "index_people_on_tenant_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
     t.index ["tenant_id", "rg"], name: "index_people_on_tenant_id_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
     t.index ["tenant_id"], name: "index_people_on_tenant_id"
-    t.index ["type"], name: "index_people_on_type"
     t.index ["user_id"], name: "index_people_on_user_id"
   end
 
@@ -121,53 +159,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_000000) do
     t.index ["tenant_id"], name: "index_service_types_on_tenant_id"
   end
 
-  create_table "services", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.string "property_name", null: false
-    t.string "property_type"
-    t.date "check_in_date", null: false
-    t.date "check_out_date", null: false
-    t.integer "number_of_guests"
-    t.integer "bedrooms"
-    t.integer "bathrooms"
-    t.decimal "price_per_night", precision: 10, scale: 2
-    t.decimal "total_price", precision: 10, scale: 2
-    t.string "currency", default: "USD"
-    t.text "description"
-    t.string "address"
-    t.text "amenities"
-    t.string "booking_reference"
-    t.string "guest_name", null: false
-    t.string "guest_email", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "customer_id"
-    t.bigint "property_id"
-    t.bigint "seller_id"
-    t.decimal "total_due", precision: 10, scale: 2
-    t.decimal "deposit_amount", precision: 10, scale: 2
-    t.decimal "final_amount", precision: 10, scale: 2
-    t.decimal "balance_due", precision: 10, scale: 2
-    t.decimal "total_payable", precision: 10, scale: 2
-    t.decimal "total_paid", precision: 10, scale: 2
-    t.decimal "balance_payable", precision: 10, scale: 2
-    t.text "guest_note"
-    t.text "seller_note"
-    t.bigint "service_type_id"
-    t.bigint "tenant_id", null: false
-    t.json "attachments_order", default: []
-    t.string "type", default: "Service", null: false
-    t.index ["customer_id"], name: "index_services_on_customer_id"
-    t.index ["property_id"], name: "index_services_on_property_id"
-    t.index ["seller_id"], name: "index_services_on_seller_id"
-    t.index ["service_type_id"], name: "index_services_on_service_type_id"
-    t.index ["tenant_id", "booking_reference"], name: "index_services_on_tenant_and_booking_reference", unique: true
-    t.index ["tenant_id", "booking_reference"], name: "index_services_on_tenant_id_and_booking_reference"
-    t.index ["tenant_id"], name: "index_services_on_tenant_id"
-    t.index ["type"], name: "index_services_on_type"
-    t.index ["user_id"], name: "index_services_on_user_id"
-  end
-
   create_table "tenants", force: :cascade do |t|
     t.string "name", null: false
     t.string "master_code", null: false
@@ -201,16 +192,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_000000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "movements", "people", column: "customer_id"
+  add_foreign_key "movements", "people", column: "seller_id"
+  add_foreign_key "movements", "properties"
+  add_foreign_key "movements", "service_types"
+  add_foreign_key "movements", "tenants"
+  add_foreign_key "movements", "users"
   add_foreign_key "people", "tenants"
   add_foreign_key "people", "users"
   add_foreign_key "properties", "tenants"
   add_foreign_key "properties", "users"
   add_foreign_key "service_types", "tenants"
-  add_foreign_key "services", "people", column: "customer_id"
-  add_foreign_key "services", "people", column: "seller_id"
-  add_foreign_key "services", "properties"
-  add_foreign_key "services", "service_types"
-  add_foreign_key "services", "tenants"
-  add_foreign_key "services", "users"
   add_foreign_key "users", "tenants"
 end

@@ -82,7 +82,7 @@ class ContractGenerator
     docx.p signature_line
 
     landlord_name = (@landlord && @landlord[:name]) || DEFAULT_LANDLORD[:name]
-    guest_name = @stay.guest_name || "Hóspede"
+    guest_name = @customer&.name || "Hóspede"
 
     docx.p do
       text "LOCADOR: "
@@ -119,7 +119,7 @@ class ContractGenerator
   end
 
   def tenant_intro
-    return @stay.guest_name unless @customer
+    return @customer&.name || "Hóspede" unless @customer
 
     [
       @customer.name,
@@ -195,7 +195,7 @@ class ContractGenerator
   end
 
   def property_name
-    @property&.name || @stay.property_name
+    @property&.name || "o imóvel"
   end
 
   def property_city_state

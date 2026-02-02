@@ -3,6 +3,7 @@ class User < ApplicationRecord
 
   has_one_attached :profile_image
   has_secure_password validations: false
+  has_many :movements, dependent: :destroy
   has_many :services, -> { where(type: "Service") }, dependent: :destroy
   has_many :stays, class_name: "Stay", dependent: :destroy
   has_many :people, dependent: :destroy

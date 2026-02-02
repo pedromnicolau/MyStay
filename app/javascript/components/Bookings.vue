@@ -147,7 +147,7 @@
                   'text-xs p-1 rounded cursor-pointer truncate',
                   getBookingColor(booking)
                 ]"
-                :title="booking.guest_name + ' - ' + booking.property_name"
+                :title="(booking.customer?.name || 'Hóspede') + ' - ' + (booking.property?.name || 'Imóvel')"
               >
                 {{ getBookingLabel(booking) }}
               </div>
@@ -174,7 +174,7 @@
             @click="viewBooking(booking)"
             :class="[
               'p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition',
-              booking.property_type === 'cleaning' ? 'bg-amber-50 border-amber-500' : 'bg-indigo-50 border-indigo-500'
+              booking.type === 'Service' ? 'bg-amber-50 border-amber-500' : 'bg-indigo-50 border-indigo-500'
             ]"
           >
             <div class="flex justify-between items-start">
@@ -182,13 +182,13 @@
                 <div class="flex items-center space-x-2 mb-1">
                   <h4 class="font-semibold text-gray-900">{{ getBookingLabel(booking) }}</h4>
                   <span
-                    v-if="booking.property_type === 'cleaning'"
+                    v-if="booking.type === 'Service'"
                     class="text-xs px-2 py-0.5 rounded-full bg-amber-200 text-amber-800"
                   >
                     Faxina
                   </span>
                 </div>
-                <p class="text-sm text-gray-600">{{ booking.property_name }}</p>
+                <p class="text-sm text-gray-600">{{ booking.property?.name || 'Imóvel' }}</p>
                 <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                   <span>Entrada: {{ formatDate(booking.check_in_date) }}</span>
                   <span>Saída: {{ formatDate(booking.check_out_date) }}</span>
@@ -777,10 +777,6 @@ export default {
         property_id: '',
         seller_id: '',
         service_type_id: '',
-        guest_name: '',
-        guest_email: '',
-        property_name: '',
-        property_type: type === 'cleaning' ? 'cleaning' : '',
         check_in_date: '',
         check_out_date: '',
         number_of_guests: 1,
@@ -842,7 +838,7 @@ export default {
 
     async loadCustomers(apiMethod) {
       try {
-        const { data, error } = await apiMethod('Customer')
+        const { data, error } = await apiMethod('customer')
         if (!error) this.customers = data
       } catch (err) {
         console.error('Error loading customers:', err)
@@ -866,7 +862,7 @@ export default {
 
     async loadSellers(apiMethod) {
       try {
-        const { data, error } = await apiMethod('Seller')
+        const { data, error } = await apiMethod('agent')
         if (!error) this.sellers = data
       } catch (err) {
         console.error('Error loading sellers:', err)
@@ -875,7 +871,7 @@ export default {
 
     async loadCleaners(apiMethod) {
       try {
-        const { data, error } = await apiMethod('Cleaner')
+        const { data, error } = await apiMethod('provider')
         if (!error) this.cleaners = data
       } catch (err) {
         console.error('Error loading cleaners:', err)
@@ -904,17 +900,18 @@ export default {
     },
 
     getBookingColor(booking) {
-      if (booking.property_type === 'cleaning') {
+      if (booking.type === 'Service') {
         return 'bg-amber-100 text-amber-800 hover:bg-amber-200'
       }
       return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
     },
 
     getBookingLabel(booking) {
-      if (booking.property_type === 'cleaning') {
-        return `${booking.guest_name} (Faxina)`
+      const guestName = booking.customer?.name || 'Hóspede'
+      if (booking.type === 'Service') {
+        return `${guestName} (Faxina)`
       }
-      return booking.guest_name
+      return guestName
     },
 
     calculateBalanceDue() {
@@ -1012,7 +1009,7 @@ export default {
     },
 
     viewBooking(booking) {
-      const type = booking.property_type === 'cleaning' ? 'cleaning' : 'booking'
+      const type = booking.type === 'Service' ? 'cleaning' : 'booking'
       this.entryType = type
       this.editingBooking = booking
       
@@ -1028,7 +1025,6 @@ export default {
         customer_id: booking.customer_id ? String(booking.customer_id) : '',
         property_id: booking.property_id || '',
         seller_id: booking.seller_id ? String(booking.seller_id) : '',
-        property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
         service_type_id: booking.service_type_id ? String(booking.service_type_id) : '',
         // Formatar valores monetários para exibição
         total_due: formatMoneyValue(booking.total_due),
@@ -1041,7 +1037,7 @@ export default {
     },
 
     editBooking(booking) {
-      const type = booking.property_type === 'cleaning' ? 'cleaning' : 'booking'
+      const type = booking.type === 'Service' ? 'cleaning' : 'booking'
       this.entryType = type
       this.editingBooking = booking
       
@@ -1057,7 +1053,6 @@ export default {
         customer_id: booking.customer_id ? String(booking.customer_id) : '',
         property_id: booking.property_id || '',
         seller_id: booking.seller_id ? String(booking.seller_id) : '',
-        property_type: booking.property_type || (type === 'cleaning' ? 'cleaning' : ''),
         service_type_id: booking.service_type_id ? String(booking.service_type_id) : '',
         // Formatar valores monetários para exibição
         total_due: formatMoneyValue(booking.total_due),
@@ -1115,10 +1110,6 @@ export default {
         property_id: this.form.property_id,
         seller_id: this.form.seller_id || null,
         service_type_id: this.form.service_type_id || null,
-        guest_name: selectedPerson ? selectedPerson.name : this.form.guest_name,
-        guest_email: selectedPerson && selectedPerson.email ? selectedPerson.email : this.form.guest_email,
-        property_name: selectedProperty ? selectedProperty.name : this.form.property_name,
-        property_type: isCleaning ? 'cleaning' : (this.form.property_type || ''),
         check_in_date: this.form.check_in_date,
         check_out_date: this.form.check_out_date,
         number_of_guests: this.form.number_of_guests,
@@ -1190,19 +1181,24 @@ export default {
       try {
         const { post, put, postFormData, putFormData } = useApi()
         const { useFormData, payload } = this.buildServiceFormData()
+        
+        // Determinar o tipo de endpoint baseado no tipo de entrada
+        const isService = this.entryType === 'cleaning'
+        const endpoint = isService ? '/api/v1/services' : '/api/v1/stays'
+        const paramKey = isService ? 'service' : 'stay'
 
         let result
         if (this.editingBooking) {
           if (useFormData) {
-            result = await putFormData(`/api/v1/services/${this.editingBooking.id}`, payload)
+            result = await putFormData(`${endpoint}/${this.editingBooking.id}`, payload)
           } else {
-            result = await put(`/api/v1/services/${this.editingBooking.id}`, { service: payload })
+            result = await put(`${endpoint}/${this.editingBooking.id}`, { [paramKey]: payload })
           }
         } else {
           if (useFormData) {
-            result = await postFormData('/api/v1/services', payload)
+            result = await postFormData(endpoint, payload)
           } else {
-            result = await post('/api/v1/services', { service: payload })
+            result = await post(endpoint, { [paramKey]: payload })
           }
         }
 
@@ -1284,7 +1280,9 @@ export default {
 
       try {
         const { delete: deleteApi } = useApi()
-        const { error } = await deleteApi(`/api/v1/services/${this.deleteConfirmBooking.id}`)
+        const isService = this.deleteConfirmBooking.type === 'Service'
+        const endpoint = isService ? '/api/v1/services' : '/api/v1/stays'
+        const { error } = await deleteApi(`${endpoint}/${this.deleteConfirmBooking.id}`)
 
         if (!error) {
           this.deleteConfirmBooking = null
@@ -1305,7 +1303,9 @@ export default {
       this.contractDownloading = true
       try {
         const { getHeaders } = useApi()
-        const requestUrl = `${window.location.origin}/api/v1/stays/${this.editingBooking.id}/contract`
+        const isService = this.editingBooking.type === 'Service'
+        const endpoint = isService ? '/api/v1/services' : '/api/v1/stays'
+        const requestUrl = `${window.location.origin}${endpoint}/${this.editingBooking.id}/contract`
         const response = await axios.get(requestUrl, {
           headers: getHeaders(),
           responseType: 'blob'
@@ -1314,10 +1314,10 @@ export default {
         const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
         const blobUrl = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
-        const guest = (this.editingBooking.guest_name || 'locacao').replace(/[\\/:*?"<>|]/g, '')
+        const name = (this.editingBooking.customer?.name || 'documento').replace(/[\\/:*?"<>|]/g, '')
 
         link.href = blobUrl
-        link.setAttribute('download', `Contrato-${guest}.docx`)
+        link.setAttribute('download', `Contrato-${name}.docx`)
         document.body.appendChild(link)
         link.click()
         link.remove()

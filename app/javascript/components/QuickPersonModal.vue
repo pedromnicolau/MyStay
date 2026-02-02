@@ -276,7 +276,9 @@ export default {
         state: '',
         note: '',
         blocked: false,
-        type: ''
+        customer: false,
+        provider: false,
+        agent: false
       },
       stateOptions: BRAZILIAN_STATES
     }
@@ -313,7 +315,9 @@ export default {
   watch: {
     isOpen(newVal) {
       if (newVal) {
-        this.form.type = this.personType
+        this.form.customer = this.personType === 'Customer'
+        this.form.agent = this.personType === 'Seller'
+        this.form.provider = this.personType === 'Cleaner' || this.personType === 'Provider'
       }
     }
   },
@@ -379,7 +383,9 @@ export default {
         state: '',
         note: '',
         blocked: false,
-        type: ''
+        customer: false,
+        provider: false,
+        agent: false
       }
       this.errors = {}
       this.onClose()

@@ -2,7 +2,7 @@
   <CrudBase
     title="Corretores"
     singular-title="Corretor"
-    api-endpoint="/api/v1/people?type=Seller"
+    api-endpoint="/api/v1/people?role=agent"
     :columns="columns"
     :form-fields="formFields"
   >
@@ -58,7 +58,9 @@ export default {
         zip: '',
         note: '',
         blocked: false,
-        type: 'Seller'
+        customer: false,
+        provider: false,
+        agent: true
       }
     }
   }

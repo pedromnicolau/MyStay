@@ -47,9 +47,9 @@ export default {
         }
 
         const [customersRes, sellersRes, cleanersRes, propertiesRes] = await Promise.all([
-          axios.get('/api/v1/people?type=Customer', { headers }),
-          axios.get('/api/v1/people?type=Seller', { headers }),
-          axios.get('/api/v1/people?type=Cleaner', { headers }),
+          axios.get('/api/v1/people?role=customer', { headers }),
+          axios.get('/api/v1/people?role=agent', { headers }),
+          axios.get('/api/v1/people?role=provider', { headers }),
           axios.get('/api/v1/properties', { headers })
         ])
 

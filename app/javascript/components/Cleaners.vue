@@ -2,7 +2,7 @@
   <CrudBase
     title="Faxineiras"
     singular-title="Faxineira"
-    api-endpoint="/api/v1/people?type=Cleaner"
+    api-endpoint="/api/v1/people?role=provider"
     :columns="columns"
     :form-fields="formFields"
   >
@@ -58,7 +58,9 @@ export default {
         zip: '',
         note: '',
         blocked: false,
-        type: 'Cleaner'
+        customer: false,
+        provider: true,
+        agent: false
       }
     }
   }

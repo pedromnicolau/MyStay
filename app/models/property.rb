@@ -4,6 +4,7 @@ class Property < ApplicationRecord
   has_many_attached :attachments, dependent: :purge_later
   has_many :services, -> { where(type: "Service") }, dependent: :nullify
   has_many :stays, class_name: "Stay", dependent: :nullify
+  has_many :movements, dependent: :nullify
 
   validates :name, presence: true
   validates :active, inclusion: { in: [ true, false ] }

@@ -42,32 +42,11 @@
                 class="absolute left-0 mt-2 w-44 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100"
               >
                 <button
-                  @click="navigate('customers')"
+                  @click="navigate('people')"
                   class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
                 >
                   <i class="fa-solid fa-user text-gray-500 mr-3"></i>
-                  Clientes
-                </button>
-                <button
-                  @click="navigate('sellers')"
-                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                >
-                  <i class="fa-solid fa-user-tie text-gray-500 mr-3"></i>
-                  Corretores
-                </button>
-                <button
-                  @click="navigate('cleaners')"
-                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                >
-                  <i class="fa-solid fa-broom text-gray-500 mr-3"></i>
-                  Faxineiras
-                </button>
-                <button
-                  @click="navigate('providers')"
-                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                >
-                  <i class="fa-solid fa-wrench text-gray-500 mr-3"></i>
-                  Prestadores de Serviço
+                  Pessoas
                 </button>
                 <button
                   @click="navigate('users')"
@@ -203,32 +182,11 @@
           </button>
           <div v-if="isMobileCadastroOpen" class="pl-4 space-y-1">
             <button
-              @click="navigate('customers')"
+              @click="navigate('people')"
               class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
             >
               <i class="fa-solid fa-user text-gray-500 mr-2"></i>
-              Clientes
-            </button>
-            <button
-              @click="navigate('sellers')"
-              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
-            >
-              <i class="fa-solid fa-user-tie text-gray-500 mr-2"></i>
-              Corretores
-            </button>
-            <button
-              @click="navigate('cleaners')"
-              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
-            >
-              <i class="fa-solid fa-broom text-gray-500 mr-2"></i>
-              Faxineiras
-            </button>
-            <button
-              @click="navigate('providers')"
-              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
-            >
-              <i class="fa-solid fa-wrench text-gray-500 mr-2"></i>
-              Prestadores de Serviço
+              Pessoas
             </button>
             <button
               @click="navigate('users')"

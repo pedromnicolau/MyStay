@@ -2,7 +2,7 @@
   <CrudBase
     title="Clientes"
     singular-title="Cliente"
-    api-endpoint="/api/v1/people?type=Customer"
+    api-endpoint="/api/v1/people?role=customer"
     :columns="columns"
     :form-fields="formFields"
   >
@@ -58,7 +58,9 @@ export default {
         zip: '',
         note: '',
         blocked: false,
-        type: 'Customer'
+        customer: true,
+        provider: false,
+        agent: false
       }
     }
   }

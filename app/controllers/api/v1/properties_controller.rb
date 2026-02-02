@@ -170,8 +170,8 @@ class Api::V1::PropertiesController < ApplicationController
   end
 
   def fetch_related_services
-    Service.where(property_id: @property.id, tenant_id: current_tenant.id)
-        .select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date, :property_type)
+    Movement.where(property_id: @property.id, tenant_id: current_tenant.id)
+        .select(:id, :check_in_date, :check_out_date)
         .order(check_in_date: :desc)
   end
 
@@ -183,12 +183,8 @@ class Api::V1::PropertiesController < ApplicationController
     services.map do |service|
       {
         id: service.id,
-        booking_reference: service.booking_reference,
-        guest_name: service.guest_name,
         check_in_date: service.check_in_date,
-        check_out_date: service.check_out_date,
-        property_type: service.property_type,
-        is_cleaning: service.property_type == "cleaning"
+        check_out_date: service.check_out_date
       }
     end
   end

@@ -166,6 +166,24 @@
       </div>
 
       <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Perfis *</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
+            <input v-model="form.customer" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
+            <span class="text-sm font-medium text-gray-700">Cliente</span>
+          </label>
+          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
+            <input v-model="form.agent" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
+            <span class="text-sm font-medium text-gray-700">Corretor</span>
+          </label>
+          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
+            <input v-model="form.provider" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
+            <span class="text-sm font-medium text-gray-700">Prestador</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
         <textarea
           v-model="form.note"
@@ -190,8 +208,6 @@
           </svg>
         </label>
       </div>
-
-      <input type="hidden" v-model="form.type" />
     </div>
   </div>
 </template>

@@ -64,9 +64,6 @@ pt-BR:
         note: "Observações"
         blocked: "Bloqueado"
       stay:
-        property_name: "Nome do imóvel"
-        guest_name: "Nome do hóspede"
-        guest_email: "E-mail do hóspede"
         check_in_date: "Data de entrada"
         check_out_date: "Data de saída"
         number_of_guests: "Número de hóspedes"
@@ -79,12 +76,8 @@ pt-BR:
         balance_payable: "Saldo a pagar"
         guest_note: "Observação do hóspede"
         seller_note: "Observação do corretor"
-        property_type: "Tipo de propriedade"
         description: "Descrição"
       service:
-        property_name: "Nome do imóvel"
-        guest_name: "Nome do hóspede"
-        guest_email: "E-mail do hóspede"
         check_in_date: "Data de entrada"
         check_out_date: "Data de saída"
         number_of_guests: "Número de hóspedes"
@@ -97,7 +90,6 @@ pt-BR:
         balance_payable: "Saldo a pagar"
         guest_note: "Observação do hóspede"
         seller_note: "Observação do corretor"
-        property_type: "Tipo de propriedade"
         description: "Descrição"
       user:
         email: "E-mail"

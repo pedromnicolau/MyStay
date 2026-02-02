@@ -179,14 +179,12 @@ const Navbar = {
     return {
       openUser: false,
       openCadastros: false,
-      openPessoas: false,
       mobileOpen: false
     }
   },
   methods: {
     go(view, options = {}) {
       this.openCadastros = false
-      this.openPessoas = false
       this.mobileOpen = false
       this.$emit('navigate', { view, ...options })
     }
@@ -210,16 +208,7 @@ const Navbar = {
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </button>
               <div v-if="openCadastros" class="absolute left-0 mt-2 w-60 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
-                <div class="px-3 py-2 text-xs uppercase tracking-wide text-gray-500">Pessoas</div>
-                <button @click="openPessoas = !openPessoas" class="flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  Pessoas
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                </button>
-                <div v-if="openPessoas" class="mt-1 border-t border-gray-100">
-                  <button @click="go('people', { type: 'Customer' })" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Clientes</button>
-                  <button @click="go('people', { type: 'Seller' })" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Corretores</button>
-                  <button @click="go('people', { type: 'Cleaner' })" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Faxineiras</button>
-                </div>
+                <button @click="go('people')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Pessoas</button>
                 <div class="border-t border-gray-100 mt-2">
                   <button @click="go('properties')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Imóveis</button>
                 </div>
@@ -240,15 +229,7 @@ const Navbar = {
         </div>
         <div v-if="mobileOpen" class="md:hidden pb-4 space-y-2 text-sm font-semibold text-gray-700">
           <div class="bg-white rounded-lg border border-gray-100 shadow-sm">
-            <button @click="openPessoas = !openPessoas" class="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              Pessoas
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-            </button>
-            <div v-if="openPessoas" class="divide-y divide-gray-100">
-              <button @click="go('people', { type: 'Customer' })" class="w-full text-left px-4 py-2 hover:bg-gray-50">Clientes</button>
-              <button @click="go('people', { type: 'Seller' })" class="w-full text-left px-4 py-2 hover:bg-gray-50">Corretores</button>
-              <button @click="go('people', { type: 'Cleaner' })" class="w-full text-left px-4 py-2 hover:bg-gray-50">Faxineiras</button>
-            </div>
+            <button @click="go('people')" class="w-full text-left px-4 py-3 border-b border-gray-100">Pessoas</button>
             <button @click="go('properties')" class="w-full text-left px-4 py-3 hover:bg-gray-50">Imóveis</button>
           </div>
           <button class="block w-full text-left px-4 py-2 bg-white rounded-lg border border-gray-100 shadow-sm">Locações</button>
@@ -259,7 +240,6 @@ const Navbar = {
 }
 
 const PeopleView = {
-  props: ['typeFilter'],
   data() {
     return {
       people: [],
@@ -271,18 +251,11 @@ const PeopleView = {
   },
   computed: {
     title() {
-      const map = { Customer: 'Clientes', Seller: 'Corretores', Cleaner: 'Faxineiras' }
-      return map[this.typeFilter] || 'Pessoas'
+      return 'Pessoas'
     }
   },
   mounted() {
     this.fetchPeople()
-  },
-  watch: {
-    typeFilter() {
-      this.form.type = this.typeFilter || 'Customer'
-      this.fetchPeople()
-    }
   },
   methods: {
     emptyForm() {
@@ -301,18 +274,23 @@ const PeopleView = {
         note: '',
         blocked: false,
         comments: '',
-        type: this.typeFilter || 'Customer'
+        customer: false,
+        provider: false,
+        agent: false
       }
     },
-    labelType(type) {
-      const map = { Customer: 'Cliente', Seller: 'Corretor', Cleaner: 'Faxineira' }
-      return map[type] || type
+    roleLabels(person) {
+      const roles = []
+      if (person.customer) roles.push('Cliente')
+      if (person.agent) roles.push('Corretor')
+      if (person.provider) roles.push('Prestador')
+      return roles.join(', ')
     },
     async fetchPeople() {
       this.loading = true
       this.error = ''
       try {
-        const response = await axios.get('/api/v1/people', { params: { type: this.typeFilter } })
+        const response = await axios.get('/api/v1/people')
         this.people = response.data
       } catch (err) {
         this.error = err.response?.data?.error || 'Não foi possível carregar as pessoas.'
@@ -376,12 +354,21 @@ const PeopleView = {
             <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ editingId ? 'Editar' : 'Cadastrar' }} {{ title }}</h2>
             <form class="space-y-3" @submit.prevent="savePerson">
               <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo</label>
-                <select v-model="form.type" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                  <option value="Customer">Cliente</option>
-                  <option value="Seller">Corretor</option>
-                  <option value="Cleaner">Faxineira</option>
-                </select>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Perfis *</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <label class="flex items-center gap-2 px-3 py-2 border rounded-lg">
+                    <input type="checkbox" v-model="form.customer" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                    <span class="text-sm text-gray-700">Cliente</span>
+                  </label>
+                  <label class="flex items-center gap-2 px-3 py-2 border rounded-lg">
+                    <input type="checkbox" v-model="form.agent" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                    <span class="text-sm text-gray-700">Corretor</span>
+                  </label>
+                  <label class="flex items-center gap-2 px-3 py-2 border rounded-lg">
+                    <input type="checkbox" v-model="form.provider" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                    <span class="text-sm text-gray-700">Prestador</span>
+                  </label>
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Nome *</label>
@@ -464,7 +451,7 @@ const PeopleView = {
                 <div>
                   <div class="flex items-center gap-2">
                     <p class="text-base font-semibold text-gray-900">{{ person.name }}</p>
-                    <span class="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700">{{ labelType(person.type) }}</span>
+                    <span v-if="roleLabels(person)" class="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700">{{ roleLabels(person) }}</span>
                     <span v-if="person.blocked" class="px-2 py-0.5 text-xs rounded-full bg-red-50 text-red-700">Bloqueado</span>
                   </div>
                   <p class="text-sm text-gray-600">CPF: {{ person.cpf }} | Tel: {{ person.phone }}</p>
@@ -665,8 +652,7 @@ const App = {
     return {
       isLoggedIn: false,
       user: null,
-      view: 'home',
-      personType: null
+      view: 'home'
     }
   },
   computed: {
@@ -676,7 +662,6 @@ const App = {
       return 'Home'
     },
     currentProps() {
-      if (this.view === 'people') return { typeFilter: this.personType }
       return { user: this.user }
     }
   },
@@ -706,7 +691,6 @@ const App = {
     },
     handleNavigate(payload) {
       this.view = payload.view
-      this.personType = payload.type || null
     }
   },
   template: `

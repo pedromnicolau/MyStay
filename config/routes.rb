@@ -15,7 +15,17 @@ Rails.application.routes.draw do
       get "/properties/public/showcase", to: "public_properties#showcase"
       get "/properties/public/:id", to: "public_properties#show"
 
+      resources :movements do
+        member do
+          get :contract
+        end
+      end
       resources :services do
+        member do
+          get :contract
+        end
+      end
+      resources :stays do
         member do
           get :contract
         end

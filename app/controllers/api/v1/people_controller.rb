@@ -5,7 +5,9 @@ class Api::V1::PeopleController < ApplicationController
 
   def index
     people = current_user.people.with_attached_profile_image.order(created_at: :desc)
-    people = people.where(type: params[:type]) if params[:type].present?
+    role = params[:role].presence || params[:type].presence
+    role = normalize_role(role) if role
+    people = filter_by_role(people, role) if role
     render json: people, status: :ok
   end
 
@@ -33,7 +35,7 @@ class Api::V1::PeopleController < ApplicationController
   def destroy
     @person.destroy
     render json: { message: "Registro removido" }, status: :ok
-  rescue ActiveRecord::InvalidForeignKey => e
+  rescue ActiveRecord::InvalidForeignKey
     render_deletion_conflict_error
   end
 
@@ -45,7 +47,8 @@ class Api::V1::PeopleController < ApplicationController
 
   def person_params
     params.require(:person).permit(:name, :cpf, :rg, :phone, :email, :profession, :marital_status,
-                                   :city, :state, :address, :number, :neighborhood, :zip, :note, :blocked, :comments, :type, :profile_image)
+                                   :city, :state, :address, :number, :neighborhood, :zip, :note, :blocked, :comments,
+                                   :customer, :provider, :agent, :profile_image)
   end
 
   def render_deletion_conflict_error
@@ -61,27 +64,53 @@ class Api::V1::PeopleController < ApplicationController
   end
 
   def fetch_related_services
-    case @person.type
-    when "Customer"
-      Service.where(customer_id: @person.id, tenant_id: current_tenant.id).select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date)
-    when "Seller"
-      Service.where(seller_id: @person.id, tenant_id: current_tenant.id).select(:id, :booking_reference, :guest_name, :check_in_date, :check_out_date)
+    if @person.customer
+      Movement.where(customer_id: @person.id, tenant_id: current_tenant.id).select(:id, :check_in_date, :check_out_date)
+    elsif @person.agent
+      Movement.where(seller_id: @person.id, tenant_id: current_tenant.id).select(:id, :check_in_date, :check_out_date)
     else
       []
     end
   end
 
   def build_deletion_error_message(services_count)
-    type_name = @person.type == "Customer" ? "cliente" : "vendedor"
-    "Não é possível excluir este #{type_name} pois existem #{services_count} serviço(s) vinculado(s) a ele."
+    role_name = if @person.customer
+      "cliente"
+    elsif @person.agent
+      "corretor"
+    else
+      "pessoa"
+    end
+    "Não é possível excluir este #{role_name} pois existem #{services_count} serviço(s) vinculado(s) a ele."
+  end
+
+  def normalize_role(role)
+    map = {
+      "Customer" => "customer",
+      "Seller" => "agent",
+      "Cleaner" => "provider",
+      "Provider" => "provider"
+    }
+    map[role] || role.to_s.downcase
+  end
+
+  def filter_by_role(scope, role)
+    case role
+    when "customer"
+      scope.where(customer: true)
+    when "provider"
+      scope.where(provider: true)
+    when "agent"
+      scope.where(agent: true)
+    else
+      scope
+    end
   end
 
   def format_services_for_response(services)
     services.map do |service|
       {
         id: service.id,
-        booking_reference: service.booking_reference,
-        guest_name: service.guest_name,
         check_in_date: service.check_in_date,
         check_out_date: service.check_out_date
       }
