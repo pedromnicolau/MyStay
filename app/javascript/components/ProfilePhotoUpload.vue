@@ -378,7 +378,7 @@ export default {
     },
     async dataUrlToBlob(dataUrl) {
       const response = await fetch(dataUrl)
-      return response.blob()
+      return await response.blob()
     },
     formatFileSize(bytes) {
       if (bytes === 0) return '0 Bytes'

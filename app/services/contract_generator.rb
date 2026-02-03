@@ -11,7 +11,7 @@ class ContractGenerator
     name: ENV.fetch("CONTRACT_LANDLORD_NAME", "DANIEL CARLOS JARDIM NICOLAU"),
     nationality: ENV.fetch("CONTRACT_LANDLORD_NATIONALITY", "brasileiro"),
     rg: ENV.fetch("CONTRACT_LANDLORD_RG", "27.748.988"),
-    cpf: ENV.fetch("CONTRACT_LANDLORD_CPF", "275.476.228-01"),
+    document: ENV.fetch("CONTRACT_LANDLORD_DOCUMENT", "275.476.228-01"),
     city: ENV.fetch("CONTRACT_LANDLORD_CITY", "Araras/SP")
   }.freeze
 
@@ -95,8 +95,8 @@ class ContractGenerator
     end
 
     docx.p "TESTEMUNHAS:"
-    docx.p "1) Nome: ______________________________ CPF: ______________________________"
-    docx.p "2) Nome: ______________________________ CPF: ______________________________"
+    docx.p "1) Nome: ______________________________ CPF/CNPJ: ______________________________"
+    docx.p "2) Nome: ______________________________ CPF/CNPJ: ______________________________"
 
     docx.save
     tmp_file
@@ -113,7 +113,7 @@ class ContractGenerator
       @landlord[:name],
       @landlord[:nationality],
       (@landlord[:rg] && "portador do RG nº #{@landlord[:rg]}") || nil,
-      (@landlord[:cpf] && "CPF nº #{@landlord[:cpf]}") || nil,
+      (@landlord[:document] && "#{document_label(@landlord[:document])} nº #{@landlord[:document]}") || nil,
       (@landlord[:city] && "residente e domiciliado em #{@landlord[:city]}") || nil
     ].compact.join(", ")
   end
@@ -125,7 +125,7 @@ class ContractGenerator
       @customer.name,
       @customer.profession || "profissão não informada",
       @customer.marital_status || "estado civil não informado",
-      (@customer.cpf && "CPF nº #{@customer.cpf}"),
+      (@customer.document && "#{document_label(@customer.document)} nº #{@customer.document}"),
       (@customer.rg && "RG nº #{@customer.rg}"),
       tenant_address
     ].compact.join(", ")
@@ -254,5 +254,11 @@ class ContractGenerator
     capacity = @stay.number_of_guests || DEFAULT_CAPACITY
     plural = capacity == 1 ? "pessoa" : "pessoas"
     "#{capacity} #{plural}"
+  end
+
+  def document_label(document)
+    return "CPF" unless document
+    cleaned = document.gsub(/\D/, "")
+    cleaned.length == 14 ? "CNPJ" : "CPF"
   end
 end

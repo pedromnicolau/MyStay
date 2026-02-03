@@ -70,6 +70,13 @@
                   <i class="fa-solid fa-house text-gray-500 mr-3"></i>
                   Imóveis
                 </button>
+                <button
+                  @click="navigate('expenses')"
+                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                >
+                  <i class="fa-solid fa-money-bill-wave text-gray-500 mr-3"></i>
+                  Despesas
+                </button>
               </div>
             </transition>
           </div>
@@ -78,7 +85,7 @@
             @click="navigate('bookings')"
             class="text-gray-700 hover:text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-50"
           >
-            Locações
+            Hospedagens
           </button>
 
           <button
@@ -210,13 +217,20 @@
               <i class="fa-solid fa-house text-gray-500 mr-2"></i>
               Imóveis
             </button>
+            <button
+              @click="navigate('expenses')"
+              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
+            >
+              <i class="fa-solid fa-money-bill-wave text-gray-500 mr-2"></i>
+              Despesas
+            </button>
           </div>
         </div>
         <button
           @click="navigate('bookings')"
           class="w-full text-left block text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-medium transition"
         >
-          Locações
+          Hospedagens
         </button>
         <button
           @click="navigate('analysis')"

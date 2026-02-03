@@ -4,7 +4,7 @@ class Api::V1::PeopleController < ApplicationController
   before_action :set_person, only: [ :show, :update, :destroy ]
 
   def index
-    people = current_user.people.with_attached_profile_image.order(created_at: :desc)
+    people = current_user.people.where(tenant_id: current_tenant.id).order(created_at: :desc)
     role = params[:role].presence || params[:type].presence
     role = normalize_role(role) if role
     people = filter_by_role(people, role) if role
@@ -42,13 +42,13 @@ class Api::V1::PeopleController < ApplicationController
   private
 
   def set_person
-    @person = current_user.people.find(params[:id])
+    @person = current_user.people.where(tenant_id: current_tenant.id).find(params[:id])
   end
 
   def person_params
-    params.require(:person).permit(:name, :cpf, :rg, :phone, :email, :profession, :marital_status,
+    params.require(:person).permit(:name, :document, :rg, :phone, :email, :profession, :marital_status,
                                    :city, :state, :address, :number, :neighborhood, :zip, :note, :blocked, :comments,
-                                   :customer, :provider, :agent, :profile_image)
+                                   :customer, :provider, :agent)
   end
 
   def render_deletion_conflict_error

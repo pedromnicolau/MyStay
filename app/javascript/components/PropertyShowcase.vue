@@ -14,6 +14,18 @@
         </p>
       </div>
 
+      <div v-if="tenantInfo && !tenantMode" class="mb-8 bg-indigo-50 border-l-4 border-indigo-600 p-6 rounded-lg">
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <div>
+            <h3 class="text-lg font-semibold text-indigo-900">Imóveis de {{ tenantInfo.name }}</h3>
+            <p class="text-sm text-indigo-700">Mostrando apenas os imóveis cadastrados por este proprietário</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Filters Section -->
       <div class="mb-8 bg-white rounded-xl shadow-md p-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -197,6 +209,8 @@ export default {
     return {
       properties: [],
       loading: false,
+      tenantInfo: null,
+      tenantCode: null,
       filters: {
         search: '',
         city: '',
@@ -282,9 +296,9 @@ export default {
       try {
         this.loading = true
         let data
+        let tenantInfo = null
 
         if (this.tenantMode) {
-          // Load tenant's own properties (authenticated)
           const userToken = localStorage.getItem('userToken')
           const tenantToken = localStorage.getItem('tenantToken')
           const response = await axios.get('/api/v1/properties', {
@@ -295,7 +309,6 @@ export default {
           })
           data = response.data
           
-          // Normalize data format from authenticated API to match showcase format
           data = data.map(property => ({
             id: property.id,
             name: property.name,
@@ -323,18 +336,28 @@ export default {
             }
           }))
         } else {
-          // Load public showcase (all tenants)
-          const response = await fetch('/api/v1/properties/public/showcase')
+          const url = this.tenantCode 
+            ? `/api/v1/properties/public/showcase?tenant_code=${this.tenantCode}`
+            : '/api/v1/properties/public/showcase'
+          
+          const response = await fetch(url)
           
           if (!response.ok) {
             throw new Error('Erro ao carregar imóveis')
           }
-          data = await response.json()
+          const result = await response.json()
+          
+          if (result.properties) {
+            data = result.properties
+            tenantInfo = result.tenant
+          } else {
+            data = result
+          }
         }
 
         this.properties = data
+        this.tenantInfo = tenantInfo
         
-        // Extract cities
         this.properties.forEach(p => {
           if (p.city) {
             this.allCities.add(p.city)
@@ -425,6 +448,13 @@ export default {
   },
 
   mounted() {
+    if (!this.tenantMode) {
+      const path = window.location.pathname
+      const match = path.match(/^\/([a-zA-Z0-9_-]+)$/)
+      if (match) {
+        this.tenantCode = match[1]
+      }
+    }
     this.loadProperties()
   }
 }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_31_150000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -70,19 +70,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_150000) do
     t.bigint "tenant_id", null: false
     t.json "attachments_order", default: []
     t.string "type", default: "Service", null: false
-    t.index ["customer_id"], name: "index_movements_on_customer_id"
-    t.index ["property_id"], name: "index_movements_on_property_id"
-    t.index ["seller_id"], name: "index_movements_on_seller_id"
-    t.index ["service_type_id"], name: "index_movements_on_service_type_id"
+    t.time "check_in_time"
+    t.time "check_out_time"
+    t.index ["tenant_id", "check_in_date"], name: "index_movements_on_tenant_id_and_check_in_date"
+    t.index ["tenant_id", "customer_id"], name: "index_movements_on_tenant_id_and_customer_id"
+    t.index ["tenant_id", "property_id"], name: "index_movements_on_tenant_id_and_property_id"
+    t.index ["tenant_id", "seller_id"], name: "index_movements_on_tenant_id_and_seller_id"
+    t.index ["tenant_id", "service_type_id"], name: "index_movements_on_tenant_id_and_service_type_id"
+    t.index ["tenant_id", "type"], name: "index_movements_on_tenant_id_and_type"
+    t.index ["tenant_id", "user_id"], name: "index_movements_on_tenant_id_and_user_id"
     t.index ["tenant_id"], name: "index_movements_on_tenant_id"
-    t.index ["type"], name: "index_movements_on_type"
-    t.index ["user_id"], name: "index_movements_on_user_id"
   end
 
   create_table "people", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "name", null: false
-    t.string "cpf", null: false
+    t.string "document", null: false
     t.string "rg"
     t.string "phone", null: false
     t.string "email"
@@ -104,13 +107,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_150000) do
     t.boolean "customer", default: false, null: false
     t.boolean "provider", default: false, null: false
     t.boolean "agent", default: false, null: false
-    t.index ["city"], name: "index_people_on_city"
-    t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_and_cpf", unique: true
-    t.index ["tenant_id", "cpf"], name: "index_people_on_tenant_id_and_cpf"
+    t.index ["tenant_id", "city"], name: "index_people_on_tenant_id_and_city"
+    t.index ["tenant_id", "document"], name: "index_people_on_tenant_and_cpf", unique: true
+    t.index ["tenant_id", "document"], name: "index_people_on_tenant_id_and_document"
     t.index ["tenant_id", "rg"], name: "index_people_on_tenant_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
     t.index ["tenant_id", "rg"], name: "index_people_on_tenant_id_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
+    t.index ["tenant_id", "user_id"], name: "index_people_on_tenant_id_and_user_id"
     t.index ["tenant_id"], name: "index_people_on_tenant_id"
-    t.index ["user_id"], name: "index_people_on_user_id"
   end
 
   create_table "properties", force: :cascade do |t|
@@ -142,10 +145,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_150000) do
     t.text "description"
     t.json "attachments_order", default: []
     t.bigint "tenant_id", null: false
-    t.index ["active"], name: "index_properties_on_active"
-    t.index ["city"], name: "index_properties_on_city"
+    t.float "latitude"
+    t.float "longitude"
+    t.index ["tenant_id", "active"], name: "index_properties_on_tenant_id_and_active"
+    t.index ["tenant_id", "city"], name: "index_properties_on_tenant_id_and_city"
+    t.index ["tenant_id", "name"], name: "index_properties_on_tenant_id_and_name", unique: true
+    t.index ["tenant_id", "user_id"], name: "index_properties_on_tenant_id_and_user_id"
     t.index ["tenant_id"], name: "index_properties_on_tenant_id"
-    t.index ["user_id"], name: "index_properties_on_user_id"
   end
 
   create_table "service_types", force: :cascade do |t|

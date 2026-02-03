@@ -27,12 +27,8 @@ export default {
     return {
       stateOptions: BRAZILIAN_STATES,
       columns: [
-        {
-          key: 'profile_image',
-          label: 'Foto'
-        },
         { key: 'name', label: 'Nome' },
-        { key: 'cpf', label: 'CPF' },
+        { key: 'document', label: 'CPF/CNPJ' },
         { key: 'phone', label: 'Telefone' },
         { key: 'email', label: 'E-mail' },
         {
@@ -53,9 +49,8 @@ export default {
         }
       ],
       formFields: {
-        profile_image: '',
         name: '',
-        cpf: '',
+        document: '',
         rg: '',
         phone: '',
         email: '',

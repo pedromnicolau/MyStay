@@ -1,13 +1,13 @@
 class User < ApplicationRecord
-  belongs_to :tenant
+  belongs_to :tenant, inverse_of: :users
 
   has_one_attached :profile_image
   has_secure_password validations: false
-  has_many :movements, dependent: :destroy
-  has_many :services, -> { where(type: "Service") }, dependent: :destroy
-  has_many :stays, class_name: "Stay", dependent: :destroy
-  has_many :people, dependent: :destroy
-  has_many :properties, dependent: :destroy
+  has_many :movements, dependent: :destroy, inverse_of: :user
+  has_many :services, -> { where(type: "Service") }, class_name: "Movement", dependent: :destroy, inverse_of: :user
+  has_many :stays, -> { where(type: "Stay") }, class_name: "Movement", dependent: :destroy, inverse_of: :user
+  has_many :people, dependent: :destroy, inverse_of: :user
+  has_many :properties, dependent: :destroy, inverse_of: :user
 
   validates :email, presence: true, uniqueness: { scope: :tenant_id }
   validates :password, presence: true, on: :create

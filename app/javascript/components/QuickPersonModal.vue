@@ -64,14 +64,14 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">CPF/CNPJ *</label>
             <input
-              v-model="form.cpf"
-              @input="handleCpfMaskInput"
+              v-model="form.document"
+              @input="handleDocumentMaskInput"
               type="text"
               required
-              placeholder="000.000.000-00"
-              maxlength="14"
+              placeholder="000.000.000-00 ou 00.000.000/0000-00"
+              maxlength="18"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
@@ -250,10 +250,11 @@ export default {
   },
 
   data() {
-    const { applyPhoneMask, applyCpfMask, applyRgMask, applyZipMask, fetchAddressByCep } = useInputMasks()
+    const { applyPhoneMask, applyDocumentMask, applyCpfMask, applyRgMask, applyZipMask, fetchAddressByCep } = useInputMasks()
 
     return {
       applyPhoneMask,
+      applyDocumentMask,
       applyCpfMask,
       applyRgMask,
       applyZipMask,
@@ -264,7 +265,7 @@ export default {
         name: '',
         email: '',
         phone: '',
-        cpf: '',
+        document: '',
         rg: '',
         profession: '',
         marital_status: '',
@@ -327,6 +328,10 @@ export default {
       event.target.value = this.applyPhoneMask(event.target.value)
     },
 
+    handleDocumentMaskInput(event) {
+      event.target.value = this.applyDocumentMask(event.target.value)
+    },
+
     handleCpfMaskInput(event) {
       event.target.value = this.applyCpfMask(event.target.value)
     },
@@ -371,7 +376,7 @@ export default {
         name: '',
         email: '',
         phone: '',
-        cpf: '',
+        document: '',
         rg: '',
         profession: '',
         marital_status: '',

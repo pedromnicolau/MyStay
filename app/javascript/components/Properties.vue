@@ -19,6 +19,15 @@
           />
         </div>
 
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Responsável *</label>
+          <SelectWithFilter 
+            v-model="form.user_id"
+            :options="userOptions"
+            placeholder="Selecione o usuário responsável"
+          />
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
           <input
@@ -304,6 +313,55 @@
           </div>
         </div>
 
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Contrato do Imóvel</label>
+          <div class="space-y-3">
+            <div v-if="form.contract" class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div 
+                class="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-blue-100 transition-colors rounded-lg p-2 -m-2"
+                @click="openContractModal(form)"
+              >
+                <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ getContractFilename(form) }}</p>
+                  <p class="text-xs text-gray-500">{{ getContractSize(form) }}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                @click.stop="removeContract(form)"
+                class="ml-2 text-red-600 hover:text-red-900 flex-shrink-0"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+
+            <label
+              class="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-indigo-400 hover:text-indigo-600 cursor-pointer bg-gray-50"
+              @dragenter.prevent
+              @dragover.prevent
+              @drop.prevent="handleContractDrop($event, form)"
+            >
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                class="hidden"
+                @change="handleContractSelected($event, form)"
+              />
+              <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>{{ form.contract ? 'Substituir contrato' : 'Adicionar contrato' }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
       </div>
     </template>
   </CrudBase>
@@ -396,6 +454,128 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal de Visualização de Contrato -->
+  <div
+    v-if="contractModal.open"
+    class="fixed inset-0 z-[70] bg-black bg-opacity-75 flex items-center justify-center p-4"
+    @click.self="closeContractModal"
+  >
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-gray-900">{{ contractModal.filename }}</h3>
+          <p class="text-sm text-gray-500">{{ contractModal.filesize }}</p>
+        </div>
+        <button
+          @click="closeContractModal"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Fechar"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
+        <div class="flex items-center gap-2">
+          <!-- Zoom controls -->
+          <button
+            v-if="isPDF"
+            @click="contractZoomOut"
+            class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Diminuir zoom"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+            </svg>
+          </button>
+          <span v-if="isPDF" class="text-sm text-gray-600 min-w-[60px] text-center">{{ Math.round(contractModal.zoom * 100) }}%</span>
+          <button
+            v-if="isPDF"
+            @click="contractZoomIn"
+            class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Aumentar zoom"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Imprimir -->
+          <button
+            @click="printContract"
+            class="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            <span class="hidden sm:inline">Imprimir</span>
+          </button>
+
+          <!-- Download -->
+          <button
+            @click="downloadContract"
+            class="flex items-center gap-2 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span class="hidden sm:inline">Baixar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Conteúdo -->
+      <div class="flex-1 overflow-auto bg-gray-100 p-4">
+        <div class="flex items-center justify-center h-full">
+          <div 
+            v-if="isPDF"
+            class="bg-white shadow-lg rounded-lg overflow-hidden relative" 
+            :style="{ transform: `scale(${contractModal.zoom})`, transformOrigin: 'top center', transition: 'transform 0.2s ease' }"
+          >
+            <iframe
+              ref="contractIframe"
+              :src="contractModal.url"
+              class="w-full"
+              style="height: 80vh; min-width: 800px;"
+              frameborder="0"
+            ></iframe>
+          </div>
+          <div v-else class="text-center">
+            <svg class="w-20 h-20 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <p class="text-gray-600 mb-4">Este tipo de arquivo não pode ser visualizado no navegador</p>
+            <button
+              @click="downloadContract"
+              class="inline-flex items-center gap-2 px-6 py-3 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Baixar Arquivo
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer com atalhos -->
+      <div class="px-6 py-3 border-t border-gray-200 bg-gray-50">
+        <div class="flex items-center justify-center gap-4 text-xs text-gray-500">
+          <span><kbd class="px-2 py-1 bg-white border border-gray-300 rounded">ESC</kbd> Fechar</span>
+          <span v-if="isPDF"><kbd class="px-2 py-1 bg-white border border-gray-300 rounded">+/-</kbd> Zoom</span>
+          <span><kbd class="px-2 py-1 bg-white border border-gray-300 rounded">P</kbd> Imprimir</span>
+          <span><kbd class="px-2 py-1 bg-white border border-gray-300 rounded">D</kbd> Baixar</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -416,6 +596,8 @@ export default {
   data() {
     return {
       stateOptions: BRAZILIAN_STATES,
+      users: [],
+      currentUser: null,
       draggedAttachment: {
         from: null,
         fromIdx: null
@@ -434,8 +616,20 @@ export default {
         dragStartX: 0,
         dragStartY: 0
       },
+      contractModal: {
+        open: false,
+        url: null,
+        filename: '',
+        filesize: '',
+        zoom: 1
+      },
       columns: [
         { key: 'name', label: 'Nome' },
+        { 
+          key: 'user', 
+          label: 'Responsável',
+          format: (value) => value ? `${value.first_name} ${value.last_name}`.trim() || value.email : '-'
+        },
         { key: 'city', label: 'Cidade',
           format: (value, item) => item.state ? `${value} - ${item.state}` : value
         },
@@ -459,6 +653,7 @@ export default {
         zip: '',
         city: '',
         state: '',
+        user_id: null,
         main_attachment_id: null,
         main_attachment_name: '',
         bedrooms: 0,
@@ -478,8 +673,22 @@ export default {
         attachments: [],
         attachments_order: [],
         remove_attachment_ids: [],
+        contract: null,
         active: true
       }
+    }
+  },
+
+  computed: {
+    isPDF() {
+      return this.contractModal.filename.toLowerCase().endsWith('.pdf')
+    },
+    
+    userOptions() {
+      return this.users.map(user => ({
+        value: user.id,
+        label: `${user.first_name} ${user.last_name}`.trim() || user.email
+      }))
     }
   },
 
@@ -505,10 +714,102 @@ export default {
         })
       },
       deep: true
+    },
+    
+    // Watch for when the modal opens and set default user_id
+    '$parent.isModalOpen'(isOpen) {
+      if (isOpen && !this.$parent.editingItem && !this.form.user_id && this.currentUser) {
+        this.$nextTick(() => {
+          this.form.user_id = this.currentUser.id
+        })
+      }
     }
   },
 
+  mounted() {
+    window.addEventListener('keydown', this.handleKeydown)
+    this.loadUsers()
+    this.loadCurrentUser()
+  },
+
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleKeydown)
+  },
+
   methods: {
+    async loadUsers() {
+      try {
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        const response = await axios.get('/api/v1/users', {
+          headers: { 
+            Authorization: `Bearer ${userToken}`, 
+            'Tenant-Authorization': `Bearer ${tenantToken}` 
+          }
+        })
+        this.users = response.data || []
+      } catch (error) {
+        console.error('Erro ao carregar usuários:', error)
+        this.users = []
+      }
+    },
+
+    async loadCurrentUser() {
+      try {
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        const response = await axios.get('/api/v1/me', {
+          headers: { 
+            Authorization: `Bearer ${userToken}`, 
+            'Tenant-Authorization': `Bearer ${tenantToken}` 
+          }
+        })
+        this.currentUser = response.data
+        // Set default user_id to current user if not already set
+        if (!this.formFields.user_id && this.currentUser) {
+          this.formFields.user_id = this.currentUser.id
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuário atual:', error)
+        this.currentUser = null
+      }
+    },
+
+    handleKeydown(e) {
+      // ESC para fechar o modal de contrato
+      if (e.key === 'Escape' && this.contractModal.open) {
+        this.closeContractModal()
+        e.preventDefault()
+      }
+      // ESC para fechar o lightbox
+      else if (e.key === 'Escape' && this.lightbox.open) {
+        this.closeLightbox()
+        e.preventDefault()
+      }
+      // Atalhos para o modal de contrato
+      else if (this.contractModal.open) {
+        // + ou = para zoom in
+        if ((e.key === '+' || e.key === '=') && this.isPDF) {
+          this.contractZoomIn()
+          e.preventDefault()
+        }
+        // - para zoom out
+        else if (e.key === '-' && this.isPDF) {
+          this.contractZoomOut()
+          e.preventDefault()
+        }
+        // P para imprimir
+        else if (e.key === 'p' || e.key === 'P') {
+          this.printContract()
+          e.preventDefault()
+        }
+        // D para download
+        else if (e.key === 'd' || e.key === 'D') {
+          this.downloadContract()
+          e.preventDefault()
+        }
+      }
+    },
     editItem(item) {
       this.$parent.editItem(item)
       this.$nextTick(() => {
@@ -991,13 +1292,130 @@ export default {
         // Scroll up - zoom in
         this.lightbox.zoom = Math.min(this.lightbox.zoom + zoomSpeed, 4)
       } else {
-        // Scroll down - zoom out
         this.lightbox.zoom = Math.max(this.lightbox.zoom - zoomSpeed, 0.25)
         if (this.lightbox.zoom === 1) {
           this.lightbox.panX = 0
           this.lightbox.panY = 0
         }
       }
+    },
+
+    handleContractSelected(event, form) {
+      const file = event.target.files?.[0]
+      if (file && this.isAllowedContractFile(file)) {
+        form.contract = this.decorateFileWithPreview(file)
+      }
+      event.target.value = ''
+    },
+
+    handleContractDrop(event, form) {
+      const file = event.dataTransfer?.files?.[0]
+      if (file && this.isAllowedContractFile(file)) {
+        form.contract = this.decorateFileWithPreview(file)
+      }
+    },
+
+    isAllowedContractFile(file) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain'
+      ]
+
+      if (allowedTypes.includes(file.type)) return true
+
+      const name = (file?.name || '').toLowerCase()
+      return /\.(pdf|doc|docx|xls|xlsx|txt)$/i.test(name)
+    },
+
+    getContractFilename(form) {
+      if (!form.contract) return ''
+      return form.contract.filename || form.contract.name || 'Contrato'
+    },
+
+    getContractSize(form) {
+      if (!form.contract) return ''
+      const bytes = form.contract.byte_size || form.contract.size
+      if (!bytes) return ''
+
+      const k = 1024
+      const sizes = ['Bytes', 'KB', 'MB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    },
+
+    removeContract(form) {
+      if (form.contract && form.contract.previewUrl) {
+        URL.revokeObjectURL(form.contract.previewUrl)
+      }
+      form.contract = null
+    },
+
+    openContractModal(form) {
+      if (!form.contract) return
+
+      const contract = form.contract
+      let url = null
+
+      // Se for um File object (arquivo novo selecionado)
+      if (contract instanceof File) {
+        url = URL.createObjectURL(contract)
+      }
+      // Se tiver previewUrl (arquivo novo processado)
+      else if (contract.previewUrl) {
+        url = contract.previewUrl
+      }
+      // Se for um arquivo existente do backend
+      else if (contract.url) {
+        url = contract.url
+      }
+
+      if (!url) {
+        console.error('Não foi possível obter URL do contrato', contract)
+        return
+      }
+
+      this.contractModal = {
+        open: true,
+        url: url,
+        filename: this.getContractFilename(form),
+        filesize: this.getContractSize(form),
+        zoom: 1
+      }
+    },
+
+    closeContractModal() {
+      this.contractModal.open = false
+      // Não revogar URL aqui pois pode ser necessário ainda
+    },
+
+    contractZoomIn() {
+      this.contractModal.zoom = Math.min(this.contractModal.zoom + 0.25, 3)
+    },
+
+    contractZoomOut() {
+      this.contractModal.zoom = Math.max(this.contractModal.zoom - 0.25, 0.5)
+    },
+
+    printContract() {
+      if (this.$refs.contractIframe && this.isPDF) {
+        this.$refs.contractIframe.contentWindow.print()
+      } else {
+        // Abre em nova aba para imprimir
+        window.open(this.contractModal.url, '_blank')
+      }
+    },
+
+    downloadContract() {
+      const link = document.createElement('a')
+      link.href = this.contractModal.url
+      link.download = this.contractModal.filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     }
   }
 }

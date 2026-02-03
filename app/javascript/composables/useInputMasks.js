@@ -3,12 +3,14 @@ import { useBrazilianMasks } from './useBrazilianMasks.js'
 export function useInputMasks() {
   const {
     applyPhoneMask,
+    applyDocumentMask,
     applyCpfMask,
     applyRgMask,
     applyCepMask,
     applyCurrencyMask,
     parseCurrencyToNumber,
     handlePhoneMaskInput,
+    handleDocumentMaskInput,
     handleCpfMaskInput,
     handleRgMaskInput,
     handleZipMaskInput,
@@ -17,12 +19,14 @@ export function useInputMasks() {
 
   return {
     applyPhoneMask,
+    applyDocumentMask,
     applyCpfMask,
     applyRgMask,
     applyZipMask: applyCepMask,
     applyCurrencyMask,
     parseCurrencyToNumber,
     handlePhoneMaskInput,
+    handleDocumentMaskInput,
     handleCpfMaskInput,
     handleRgMaskInput,
     handleZipMaskInput,

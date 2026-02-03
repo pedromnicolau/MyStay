@@ -4,7 +4,7 @@ class Api::V1::PropertiesController < ApplicationController
   before_action :set_property, only: [ :show, :update, :destroy ]
 
   def index
-    properties = current_user.properties.with_attached_attachments.order(created_at: :desc)
+    properties = Property.where(tenant_id: current_tenant.id).includes(:user).with_attached_attachments.order(created_at: :desc)
     render json: properties.map { |property| serialize_property(property) }, status: :ok
   end
 
@@ -13,7 +13,13 @@ class Api::V1::PropertiesController < ApplicationController
   end
 
   def create
-    property = current_user.properties.build(property_payload)
+    payload = property_payload
+    # Use user_id from payload if present, otherwise use current_user
+    payload[:user_id] = current_user.id if payload[:user_id].blank?
+    # Ensure tenant_id is set from current_tenant
+    payload[:tenant_id] = current_tenant.id
+
+    property = Property.new(payload)
 
     if property.save
       process_attachments(property)
@@ -42,29 +48,31 @@ class Api::V1::PropertiesController < ApplicationController
   private
 
   def set_property
-    @property = current_user.properties.with_attached_attachments.find(params[:id])
+    @property = Property.where(tenant_id: current_tenant.id).includes(:user).with_attached_attachments.find(params[:id])
   end
 
   def property_params
     params.require(:property).permit(
       :name, :description, :address, :number, :neighborhood, :zip, :city, :state, :active,
+      :user_id,
       :bedrooms, :bathrooms, :max_guests,
       :air_conditioning, :wifi, :tv, :kitchen, :parking_included,
       :washing_machine, :pool, :barbecue_grill, :balcony, :pet_friendly, :wheelchair_accessible,
-      :main_attachment_id, :main_attachment_name,
+      :main_attachment_id, :main_attachment_name, :contract,
       attachments: [], remove_attachment_ids: [], attachments_order: []
     )
   end
 
   def property_payload
     permitted = property_params
-    permitted = permitted.except(:remove_attachment_ids, :attachments)
+    permitted = permitted.except(:remove_attachment_ids, :attachments, :contract)
     permitted = permitted.except(:main_attachment_id, :main_attachment_name) unless Property.new.respond_to?(:main_attachment_id)
     permitted
   end
 
   def process_attachments(property)
     attach_files(property)
+    attach_contract(property)
     purge_removed_attachments(property)
     assign_main_attachment_if_needed(property)
     save_attachments_order(property)
@@ -74,6 +82,14 @@ class Api::V1::PropertiesController < ApplicationController
     new_files = params.dig(:property, :attachments)
     return if new_files.blank?
     property.attachments.attach(new_files)
+  end
+
+  def attach_contract(property)
+    contract_file = params.dig(:property, :contract)
+    return if contract_file.blank?
+    # Only attach if it's a new file upload, not an existing contract object
+    return unless contract_file.is_a?(ActionDispatch::Http::UploadedFile)
+    property.contract.attach(contract_file)
   end
 
   def purge_removed_attachments(property)
@@ -94,7 +110,33 @@ class Api::V1::PropertiesController < ApplicationController
     serialized = property.as_json
     serialized["attachments"] = attachments_payload(property)
     serialized["attachments_order"] = property.attachments_order || [] if property.respond_to?(:attachments_order)
+    serialized["contract"] = contract_payload(property) if property.contract.attached?
+
+    # Include user information
+    if property.user
+      serialized["user"] = {
+        id: property.user.id,
+        first_name: property.user.first_name,
+        last_name: property.user.last_name,
+        email: property.user.email
+      }
+    end
+
     serialized
+  end
+
+  def contract_payload(property)
+    attachment = property.contract.attachment
+    return nil unless attachment
+
+    {
+      id: attachment.id,
+      filename: attachment.filename.to_s,
+      content_type: attachment.content_type,
+      byte_size: attachment.byte_size,
+      created_at: attachment.created_at,
+      url: url_for(attachment)
+    }
   end
 
   def attachments_payload(property)

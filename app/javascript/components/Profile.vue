@@ -323,7 +323,7 @@ export default {
 
     async dataUrlToBlob(dataUrl) {
       const response = await fetch(dataUrl)
-      return response.blob()
+      return await response.blob()
     },
 
     handlePhotoUploadSuccess(payload) {

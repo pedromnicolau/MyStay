@@ -30,6 +30,7 @@ Rails.application.routes.draw do
           get :contract
         end
       end
+      resources :expenses
       resources :service_types
       resources :people
       resources :properties

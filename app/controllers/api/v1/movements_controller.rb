@@ -7,7 +7,9 @@ module Api
       before_action :set_movement_with_associations, only: [ :contract ]
 
       def index
-        movements = current_user.movements.with_attached_attachments.order(created_at: :desc)
+        # Por padrão, excluir Expenses (calendário de hospedagens mostra apenas Stay e Service)
+        # Expenses tem seu próprio endpoint
+        movements = current_user.movements.where.not(type: "Expense").with_attached_attachments.order(created_at: :desc)
 
         # Filtrar por datas se fornecidas
         if params[:start_date].present? && params[:end_date].present?
@@ -126,7 +128,19 @@ module Api
       end
 
       def serialize_movement(movement)
-        serialized = movement.as_json
+        serialized = movement.as_json(
+          include: {
+            customer: { only: [ :id, :name, :phone, :email ] },
+            property: { only: [ :id, :name, :address, :city, :state ] },
+            seller: { only: [ :id, :name, :phone, :email ] },
+            service_type: { only: [ :id, :name, :description ] }
+          }
+        )
+        # Garantir que o type está sempre presente no JSON
+        serialized["type"] = movement.type
+        # Converter times para formato HH:MM para o frontend
+        serialized["check_in_time"] = movement.check_in_time&.strftime("%H:%M")
+        serialized["check_out_time"] = movement.check_out_time&.strftime("%H:%M")
         serialized["attachments"] = attachments_payload(movement)
         serialized["attachments_order"] = movement.attachments_order || [] if movement.respond_to?(:attachments_order)
         serialized
@@ -155,11 +169,11 @@ module Api
       end
 
       def set_movement
-        @movement = current_user.movements.with_attached_attachments.find(params[:id])
+        @movement = current_user.movements.where(tenant_id: current_tenant.id).with_attached_attachments.find(params[:id])
       end
 
       def set_movement_with_associations
-        @movement = current_user.movements.includes(:customer, :property).find(params[:id])
+        @movement = current_user.movements.where(tenant_id: current_tenant.id).includes(:customer, :property).find(params[:id])
       end
     end
   end

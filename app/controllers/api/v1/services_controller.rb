@@ -8,7 +8,7 @@ module Api
       end
 
       def movement_params
-        params.require(:service).permit(:check_in_date, :check_out_date,
+        params.require(:service).permit(:check_in_date, :check_out_date, :check_in_time, :check_out_time,
                                         :number_of_guests, :price_per_night,
                                         :total_price, :currency, :description, :address,
                                         :customer_id, :property_id,

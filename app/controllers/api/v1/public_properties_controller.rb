@@ -2,17 +2,33 @@ class Api::V1::PublicPropertiesController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def showcase
-    # List all active properties from all tenants with images
     properties = Property.where(active: true)
       .with_attached_attachments
       .order(created_at: :desc)
-      .limit(params[:limit] || 50)
 
-    render json: properties.map { |property| serialize_property_for_showcase(property) }, status: :ok
+    tenant_info = nil
+    if params[:tenant_code].present?
+      tenant = Tenant.find_by(master_code: params[:tenant_code])
+      if tenant
+        properties = properties.where(tenant_id: tenant.id)
+        tenant_info = { id: tenant.id, name: tenant.name, master_code: tenant.master_code }
+      else
+        properties = properties.none
+      end
+    end
+
+    properties = properties.limit(params[:limit] || 50)
+
+    result = {
+      properties: properties.map { |property| serialize_property_for_showcase(property) }
+    }
+    result[:tenant] = tenant_info if tenant_info
+
+    render json: result, status: :ok
   end
 
   def show
-    property = Property.with_attached_attachments.find_by(id: params[:id], active: true)
+    property = Property.with_attached_attachments.includes(:user).find_by(id: params[:id], active: true)
 
     if property
       render json: serialize_property_for_detail(property), status: :ok
@@ -57,6 +73,13 @@ class Api::V1::PublicPropertiesController < ApplicationController
   def serialize_property_for_detail(property)
     images = property.attachments.map { |attachment| url_for(attachment) }
 
+    # Get unavailable dates from stays/movements (next 365 days)
+    unavailable_dates = Movement.where(property_id: property.id)
+      .where("check_out_date >= ?", Date.today)
+      .pluck(:check_in_date, :check_out_date)
+      .flat_map { |check_in, check_out| (check_in...check_out).to_a }
+      .map { |date| date.strftime("%Y-%m-%d") }
+
     {
       id: property.id,
       name: property.name,
@@ -86,7 +109,15 @@ class Api::V1::PublicPropertiesController < ApplicationController
       images: images,
       tenant_id: property.tenant_id,
       created_at: property.created_at,
-      updated_at: property.updated_at
+      updated_at: property.updated_at,
+      user: property.user ? {
+        id: property.user.id,
+        first_name: property.user.first_name,
+        last_name: property.user.last_name,
+        email: property.user.email,
+        phone: property.user.phone
+      } : nil,
+      unavailable_dates: unavailable_dates
     }
   end
 end

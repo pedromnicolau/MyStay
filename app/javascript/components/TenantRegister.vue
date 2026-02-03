@@ -118,7 +118,7 @@
 
           <button
             type="submit"
-            :disabled="loading || masterCodeError"
+            :disabled="!isFormValid || loading"
             class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50"
           >
             {{ loading ? 'Criando conta...' : 'Criar Conta' }}
@@ -164,6 +164,28 @@ export default {
           password_confirmation: ''
         }
       }
+    }
+  },
+
+  computed: {
+    isFormValid() {
+      // Verificar se todos os campos obrigatórios estão preenchidos
+      const tenantValid = this.form.tenant.name.trim() !== '' && 
+                         this.form.tenant.master_code.trim() !== ''
+      
+      const userValid = this.form.user.first_name.trim() !== '' &&
+                       this.form.user.last_name.trim() !== '' &&
+                       this.form.user.email.trim() !== '' &&
+                       this.form.user.password.trim() !== '' &&
+                       this.form.user.password_confirmation.trim() !== ''
+      
+      // Verificar se não há erro no master code
+      const noMasterCodeError = !this.masterCodeError
+      
+      // Verificar se as senhas coincidem
+      const passwordsMatch = this.form.user.password === this.form.user.password_confirmation
+      
+      return tenantValid && userValid && noMasterCodeError && passwordsMatch
     }
   },
 

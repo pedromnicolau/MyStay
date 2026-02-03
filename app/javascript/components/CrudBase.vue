@@ -58,23 +58,7 @@
                     :key="column.key"
                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                   >
-                    <template v-if="column.key === 'profile_image'">
-                      <div class="flex items-center">
-                        <div 
-                          v-if="item[column.key]"
-                          class="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-indigo-100 to-indigo-200 border-2 border-indigo-300 flex items-center justify-center flex-shrink-0"
-                        >
-                          <img 
-                            :src="item[column.key]" 
-                            :alt="item.name || 'Foto'"
-                            class="w-full h-full object-cover"
-                            @error="$event.target.style.display='none'"
-                          />
-                        </div>
-                        <span v-else class="text-gray-400 text-xs">Sem foto</span>
-                      </div>
-                    </template>
-                    <template v-else-if="column.format">
+                    <template v-if="column.format">
                       {{ column.format(item[column.key], item) }}
                     </template>
                     <template v-else>
@@ -189,7 +173,7 @@
                 <p class="text-red-700 text-sm mb-3">{{ deleteErrorMessage }}</p>
                 <div class="bg-white rounded-md p-3 border border-red-100">
                   <p class="text-sm text-gray-700">
-                    <strong class="text-red-700">💡 Solução rápida:</strong> Use o botão de lixeira para excluir as locações diretamente, ou clique no nome para editá-las.
+                    <strong class="text-red-700">💡 Solução rápida:</strong> Use o botão de lixeira para excluir as hospedagens diretamente, ou clique no nome para editá-las.
                   </p>
                 </div>
               </div>
@@ -198,7 +182,7 @@
 
           <div v-if="relatedStays && relatedStays.length > 0" class="space-y-2">
             <p class="text-sm font-semibold text-gray-700 mb-2">
-              {{ relatedStays[0]?.is_cleaning !== undefined ? 'Locações' : 'Estadias' }} relacionadas ({{ relatedStays.length }}):
+              {{ relatedStays[0]?.is_cleaning !== undefined ? 'Hospedagens' : 'Estadias' }} relacionadas ({{ relatedStays.length }}):
             </p>
             <div class="bg-gray-50 rounded-lg divide-y divide-gray-200">
               <div
@@ -232,7 +216,7 @@
                       @click="openDeleteRelatedStayConfirm(stay)"
                       :disabled="deletingStayId === stay.id"
                       class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
-                      title="Excluir locação"
+                      title="Excluir hospedagem"
                     >
                       <svg 
                         v-if="deletingStayId !== stay.id"
@@ -292,8 +276,8 @@
 
 <ConfirmationModal
   :isOpen="!!relatedStayToDelete"
-  title="Excluir locação"
-  :message="`Tem certeza que deseja excluir a locação de ${relatedStayToDelete?.guest_name || ''}?`"
+  title="Excluir hospedagem"
+  :message="`Tem certeza que deseja excluir a hospedagem de ${relatedStayToDelete?.guest_name || ''}?`"
   :details="relatedStayToDelete ? `Check-in: ${formatDate(relatedStayToDelete.check_in_date)}<br/>Check-out: ${formatDate(relatedStayToDelete.check_out_date)}` : ''"
   confirmLabel="Excluir"
   cancelLabel="Cancelar"
@@ -439,7 +423,7 @@ export default {
 
         const useFormData = this.formNeedsMultipart(cleanedForm)
         const payload = useFormData ? this.buildFormData(resourceName, cleanedForm) : { [resourceName]: cleanedForm }
-        const requestConfig = useFormData ? { headers } : { headers }
+        const requestConfig = { headers }
 
         if (this.editingItem) {
           const updateEndpoint = this.customUpdateEndpoint 
@@ -454,39 +438,20 @@ export default {
         this.closeModal()
         this.loadItems()
       } catch (err) {
-        this.formErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao salvar'
+        console.error('Erro ao salvar:', err)
+        this.formErrors.general = err.response?.data?.errors?.join(', ') || err.message || 'Erro ao salvar'
       } finally {
         this.saving = false
       }
     },
 
-    normalizeValueForPayload(key, value) {
+    async normalizeValueForPayload(key, value) {
       if (key === 'attachments' && Array.isArray(value)) {
         const fileOnly = value.filter(item => this.isFileLike(item))
         return fileOnly.length > 0 ? fileOnly : undefined
       }
 
-      // Converter Data URL para Blob para foto de perfil
-      if (key === 'profile_image' && typeof value === 'string' && value.startsWith('data:')) {
-        return this.dataUrlToBlob(value)
-      }
-
-      // Se profile_image é uma URL HTTP (imagem existente), não enviar (não mudou)
-      if (key === 'profile_image' && typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/'))) {
-        return undefined
-      }
-
-      // Se profile_image é string vazia, não enviar
-      if (key === 'profile_image' && value === '') {
-        return undefined
-      }
-
       return value
-    },
-
-    async dataUrlToBlob(dataUrl) {
-      const response = await fetch(dataUrl)
-      return response.blob()
     },
 
     formNeedsMultipart(cleanedForm) {

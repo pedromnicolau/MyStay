@@ -17,6 +17,32 @@ export function useBrazilianMasks() {
     return ''
   }
 
+  const applyDocumentMask = (value) => {
+    const digits = String(value).replace(/\D/g, '')
+    
+    if (digits.length <= 11) {
+      if (digits.length > 9) {
+        return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`
+      } else if (digits.length > 6) {
+        return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}`
+      } else if (digits.length > 3) {
+        return `${digits.slice(0, 3)}.${digits.slice(3, 6)}`
+      }
+      return digits
+    } else {
+      if (digits.length > 12) {
+        return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`
+      } else if (digits.length > 8) {
+        return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}`
+      } else if (digits.length > 5) {
+        return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}`
+      } else if (digits.length > 2) {
+        return `${digits.slice(0, 2)}.${digits.slice(2, 5)}`
+      }
+      return digits
+    }
+  }
+
   const applyCpfMask = (value) => {
     const digits = String(value).replace(/\D/g, '')
     
@@ -98,6 +124,12 @@ export function useBrazilianMasks() {
     form.phone = formattedValue
   }
 
+  const handleDocumentInput = (event, form) => {
+    const formattedValue = applyDocumentMask(event.target.value)
+    event.target.value = formattedValue
+    form.document = formattedValue
+  }
+
   const handleCpfInput = (event, form) => {
     const formattedValue = applyCpfMask(event.target.value)
     event.target.value = formattedValue
@@ -120,6 +152,10 @@ export function useBrazilianMasks() {
     event.target.value = applyPhoneMask(event.target.value)
   }
 
+  const handleDocumentMaskInput = (event) => {
+    event.target.value = applyDocumentMask(event.target.value)
+  }
+
   const handleCpfMaskInput = (event) => {
     event.target.value = applyCpfMask(event.target.value)
   }
@@ -138,6 +174,7 @@ export function useBrazilianMasks() {
 
   return {
     applyPhoneMask,
+    applyDocumentMask,
     applyCpfMask,
     applyRgMask,
     applyCepMask,
@@ -145,10 +182,12 @@ export function useBrazilianMasks() {
     parseCurrencyToNumber,
     getWhatsAppLink,
     handlePhoneInput,
+    handleDocumentInput,
     handleCpfInput,
     handleRgInput,
     handleCepInput,
     handlePhoneMaskInput,
+    handleDocumentMaskInput,
     handleCpfMaskInput,
     handleRgMaskInput,
     handleZipMaskInput,

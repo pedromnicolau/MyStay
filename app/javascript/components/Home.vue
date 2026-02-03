@@ -12,6 +12,7 @@
       <TenantSettings v-else-if="currentRoute === 'tenant-settings'" />
       <Users v-else-if="currentRoute === 'users'" />
       <ServiceTypes v-else-if="currentRoute === 'service-types'" />
+      <Expenses v-else-if="currentRoute === 'expenses'" />
       <PropertyDetail 
         v-else-if="currentRoute === 'property-detail'" 
         :propertyId="router.params.id" 
@@ -32,6 +33,7 @@ import Profile from './Profile.vue'
 import TenantSettings from './TenantSettings.vue'
 import Users from './Users.vue'
 import ServiceTypes from './ServiceTypes.vue'
+import Expenses from './Expenses.vue'
 import PropertyDetail from './PropertyDetail.vue'
 import { router, navigateTo } from '../router.js'
 
@@ -47,6 +49,7 @@ export default {
     TenantSettings,
     Users,
     ServiceTypes,
+    Expenses,
     PropertyDetail
   },
   emits: ['user-updated'],

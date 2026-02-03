@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="mb-6 flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">Locações</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Hospedagens</h1>
         <div class="flex items-center space-x-3">
           <button
             @click="openCreateModal('booking')"
@@ -17,7 +17,7 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            <span>Nova Locação</span>
+            <span>Nova Hospedagem</span>
           </button>
 
           <button
@@ -48,7 +48,7 @@
           </div>
           <h3 class="text-xl font-semibold text-gray-900 mb-2">Nenhum imóvel cadastrado</h3>
           <p class="text-gray-600 mb-6">
-            Para criar locações, é necessário cadastrar ao menos um imóvel no sistema.
+            Para criar hospedagens, é necessário cadastrar ao menos um imóvel no sistema.
           </p>
           <button
             @click="navigateToProperties"
@@ -147,7 +147,7 @@
                   'text-xs p-1 rounded cursor-pointer truncate',
                   getBookingColor(booking)
                 ]"
-                :title="(booking.customer?.name || 'Hóspede') + ' - ' + (booking.property?.name || 'Imóvel')"
+                :title="getBookingTooltip(booking)"
               >
                 {{ getBookingLabel(booking) }}
               </div>
@@ -157,14 +157,14 @@
       </div>
 
       <div class="bg-white rounded-lg shadow-sm p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Locações do Mês</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Hospedagens do Mês</h3>
         
         <div v-if="loading" class="flex justify-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
 
         <div v-else-if="bookings.length === 0" class="text-center py-8 text-gray-500">
-          Nenhuma locação neste período
+          Nenhuma hospedagem neste período
         </div>
 
         <div v-else class="space-y-3">
@@ -174,27 +174,59 @@
             @click="viewBooking(booking)"
             :class="[
               'p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition',
-              booking.type === 'Service' ? 'bg-amber-50 border-amber-500' : 'bg-indigo-50 border-indigo-500'
+              booking.type === 'Service' ? 'bg-green-50 border-green-500' : 'bg-indigo-50 border-indigo-500'
             ]"
           >
             <div class="flex justify-between items-start">
               <div class="flex-1">
-                <div class="flex items-center space-x-2 mb-1">
-                  <h4 class="font-semibold text-gray-900">{{ getBookingLabel(booking) }}</h4>
-                  <span
-                    v-if="booking.type === 'Service'"
-                    class="text-xs px-2 py-0.5 rounded-full bg-amber-200 text-amber-800"
-                  >
-                    Faxina
-                  </span>
+                <div class="flex items-center space-x-2 mb-2">
+                  <!-- Ícone e tipo -->
+                  <div :class="[
+                    'flex items-center justify-center w-8 h-8 rounded-full',
+                    booking.type === 'Service' ? 'bg-green-200' : 'bg-indigo-200'
+                  ]">
+                    <svg v-if="booking.type === 'Service'" class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <svg v-else class="w-5 h-5 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                  </div>
+                  
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-semibold text-gray-900">{{ getBookingLabel(booking) }}</h4>
+                      <span :class="[
+                        'text-xs px-2 py-0.5 rounded-full font-medium',
+                        booking.type === 'Service' ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                      ]">
+                        {{ booking.type === 'Service' ? 'Serviço' : 'Hospedagem' }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ booking.customer?.name || (booking.type === 'Service' ? 'Prestador' : 'Hóspede') }}</p>
+                  </div>
                 </div>
-                <p class="text-sm text-gray-600">{{ booking.property?.name || 'Imóvel' }}</p>
-                <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                  <span>Entrada: {{ formatDate(booking.check_in_date) }}</span>
-                  <span>Saída: {{ formatDate(booking.check_out_date) }}</span>
-                  <span v-if="booking.total_price" class="font-semibold text-gray-900">
-                    R$ {{ parseFloat(booking.total_price).toFixed(2) }}
-                  </span>
+                
+                <div class="ml-10">
+                  <p class="text-sm text-gray-700 mb-2 font-medium">{{ booking.property?.name || 'Imóvel' }}</p>
+                  <div class="flex items-center space-x-4 text-xs text-gray-600">
+                    <span class="flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {{ formatDate(booking.check_in_date) }}{{ booking.check_in_time ? ' às ' + formatTime(booking.check_in_time) : '' }}
+                    </span>
+                    <span class="text-gray-400">→</span>
+                    <span class="flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {{ formatDate(booking.check_out_date) }}{{ booking.check_out_time ? ' às ' + formatTime(booking.check_out_time) : '' }}
+                    </span>
+                    <span v-if="booking.total_price" class="ml-auto font-semibold text-gray-900">
+                      R$ {{ parseFloat(booking.total_price).toFixed(2) }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="flex space-x-2">
@@ -229,7 +261,7 @@
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
           <h2 class="text-xl font-semibold text-gray-900">
-            {{ editingBooking ? (entryType === 'cleaning' ? 'Editar Serviço' : 'Editar Locação') : (entryType === 'cleaning' ? 'Novo Serviço' : 'Nova Locação') }}
+            {{ editingBooking ? (entryType === 'cleaning' ? 'Editar Serviço' : 'Editar Hospedagem') : (entryType === 'cleaning' ? 'Novo Serviço' : 'Nova Hospedagem') }}
           </h2>
           <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +278,7 @@
                   v-model="form.customer_id"
                   :options="cleanerOptions"
                   :selected-person="selectedCleaner"
-                  label="Faxineira *"
+                  label="Prestador *"
                   @update:modelValue="handleCleanerChange"
                 />
               </div>
@@ -273,6 +305,22 @@
               </div>
 
               <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  <span class="flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Horário Início
+                  </span>
+                </label>
+                <input
+                  v-model="form.check_in_time"
+                  type="time"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Data Fim *</label>
                 <input
                   v-model="form.check_out_date"
@@ -280,6 +328,36 @@
                   required
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  <span class="flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Horário Fim
+                  </span>
+                </label>
+                <input
+                  v-model="form.check_out_time"
+                  type="time"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <!-- Aviso para mesmo dia -->
+            <div v-if="formErrors.sameDayCheckout" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-yellow-700">{{ formErrors.sameDayCheckout }}</p>
+                </div>
               </div>
             </div>
 
@@ -352,6 +430,22 @@
             </div>
 
             <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                <span class="flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Horário Check-in
+                </span>
+              </label>
+              <input
+                v-model="form.check_in_time"
+                type="time"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-out *</label>
               <input
                 v-model="form.check_out_date"
@@ -359,6 +453,36 @@
                 required
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                <span class="flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Horário Check-out
+                </span>
+              </label>
+              <input
+                v-model="form.check_out_time"
+                type="time"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <!-- Aviso para mesmo dia -->
+            <div v-if="formErrors.sameDayCheckout" class="md:col-span-2 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-yellow-700">{{ formErrors.sameDayCheckout }}</p>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -540,7 +664,7 @@
     <ConfirmationModal
       :isOpen="!!deleteConfirmBooking"
       title="Confirmar Exclusão"
-      message="Tem certeza que deseja excluir esta locação? Esta ação não pode ser desfeita."
+      message="Tem certeza que deseja excluir esta hospedagem? Esta ação não pode ser desfeita."
       :loading="deleting"
       @confirm="deleteBooking"
       @cancel="deleteConfirmBooking = null"
@@ -684,7 +808,7 @@ export default {
 
     cleanerOptions() {
       return [
-        { value: 'new', label: '+ Nova Faxineira' },
+        { value: 'new', label: '+ Novo Prestador' },
         ...this.activeCleaners.map(c => ({ value: String(c.id), label: c.name }))
       ]
     },
@@ -753,6 +877,14 @@ export default {
         }
       },
       deep: true
+    },
+
+    'form.check_in_date': function(newVal) {
+      this.validateSameDayCheckout()
+    },
+
+    'form.check_out_date': function(newVal) {
+      this.validateSameDayCheckout()
     }
   },
 
@@ -778,7 +910,9 @@ export default {
         seller_id: '',
         service_type_id: '',
         check_in_date: '',
+        check_in_time: '',
         check_out_date: '',
+        check_out_time: '',
         number_of_guests: 1,
         total_due: '0,00',
         deposit_amount: '0,00',
@@ -892,26 +1026,60 @@ export default {
       if (this.selectedPropertyId !== null) {
         filtered = filtered.filter(b => b.property_id === this.selectedPropertyId)
       }
+      
+      // Normalizar a data do calendário para início do dia (00:00:00)
+      const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      
       return filtered.filter(booking => {
-        const checkIn = new Date(booking.check_in_date)
-        const checkOut = new Date(booking.check_out_date)
-        return date >= checkIn && date <= checkOut
+        // Criar datas normalizadas (início do dia) para comparação
+        const checkIn = new Date(booking.check_in_date + 'T00:00:00')
+        const checkOut = new Date(booking.check_out_date + 'T00:00:00')
+        
+        // Verificar se a data do calendário está dentro do período do booking
+        return targetDate >= checkIn && targetDate <= checkOut
       })
     },
 
     getBookingColor(booking) {
       if (booking.type === 'Service') {
-        return 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+        return 'bg-green-100 text-green-800 hover:bg-green-200'
       }
       return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
     },
 
     getBookingLabel(booking) {
-      const guestName = booking.customer?.name || 'Hóspede'
       if (booking.type === 'Service') {
-        return `${guestName} (Faxina)`
+        const serviceTypeName = booking.service_type?.name || 'Serviço'
+        return serviceTypeName
       }
-      return guestName
+      return 'Hospedagem'
+    },
+
+    getBookingTooltip(booking) {
+      const propertyName = booking.property?.name || 'Imóvel'
+      let tooltip = ''
+      
+      if (booking.type === 'Service') {
+        const serviceTypeName = booking.service_type?.name || 'Serviço'
+        const providerName = booking.customer?.name || 'Prestador'
+        tooltip = `${serviceTypeName} - ${providerName} - ${propertyName}`
+      } else {
+        const customerName = booking.customer?.name || 'Hóspede'
+        tooltip = `Hospedagem - ${customerName} - ${propertyName}`
+      }
+      
+      if (booking.check_in_time || booking.check_out_time) {
+        tooltip += '\n'
+        if (booking.check_in_time) {
+          tooltip += `Início: ${this.formatTime(booking.check_in_time)}`
+        }
+        if (booking.check_out_time) {
+          if (booking.check_in_time) tooltip += ' | '
+          tooltip += `Fim: ${this.formatTime(booking.check_out_time)}`
+        }
+      }
+      
+      return tooltip
     },
 
     calculateBalanceDue() {
@@ -965,8 +1133,30 @@ export default {
     },
 
     formatDate(dateString) {
-      const date = new Date(dateString)
+      const date = new Date(dateString + 'T00:00:00')
       return date.toLocaleDateString('pt-BR')
+    },
+
+    formatTime(timeString) {
+      if (!timeString) return ''
+      // timeString pode vir como "HH:MM:SS" ou "HH:MM"
+      const parts = timeString.split(':')
+      return `${parts[0]}:${parts[1]}`
+    },
+
+    validateSameDayCheckout() {
+      // Limpar erro anterior se existir
+      if (this.formErrors.sameDayCheckout) {
+        delete this.formErrors.sameDayCheckout
+      }
+
+      // Se as datas forem iguais e não tiver horários, mostrar aviso
+      if (this.form.check_in_date && this.form.check_out_date && 
+          this.form.check_in_date === this.form.check_out_date) {
+        if (!this.form.check_in_time || !this.form.check_out_time) {
+          this.formErrors.sameDayCheckout = 'Atenção: Para check-in e check-out no mesmo dia, é obrigatório informar os horários'
+        }
+      }
     },
 
     previousMonth() {
@@ -1104,14 +1294,16 @@ export default {
       const hasRemovedAttachments = this.form.remove_attachment_ids && this.form.remove_attachment_ids.length > 0
       const hasAttachmentsOrder = this.form.attachments_order && this.form.attachments_order.length > 0
 
-      // Dados do serviço/locação
+      // Dados do serviço/hospedagem
       const serviceData = {
         customer_id: this.form.customer_id,
         property_id: this.form.property_id,
         seller_id: this.form.seller_id || null,
         service_type_id: this.form.service_type_id || null,
         check_in_date: this.form.check_in_date,
+        check_in_time: this.form.check_in_time || null,
         check_out_date: this.form.check_out_date,
+        check_out_time: this.form.check_out_time || null,
         number_of_guests: this.form.number_of_guests,
         total_due: this.parseCurrencyToNumber(this.form.total_due || '0'),
         deposit_amount: this.parseCurrencyToNumber(this.form.deposit_amount || '0'),
@@ -1125,9 +1317,12 @@ export default {
         description: this.form.description || ''
       }
 
+      // Determinar o prefixo baseado no tipo
+      const paramKey = isCleaning ? 'service' : 'stay'
+
       // Se vamos usar JSON (não FormData), adicionar arrays ao serviceData
       if (!hasNewFiles && !hasRemovedAttachments && !hasAttachmentsOrder) {
-        return { useFormData: false, payload: serviceData }
+        return { useFormData: false, payload: serviceData, paramKey }
       }
 
       // Para JSON, incluir arrays apenas se tiverem elementos
@@ -1138,54 +1333,68 @@ export default {
         if (hasAttachmentsOrder) {
           serviceData.attachments_order = this.form.attachments_order
         }
-        return { useFormData: false, payload: serviceData }
+        return { useFormData: false, payload: serviceData, paramKey }
       }
 
       // Construir FormData para enviar arquivos
       const formData = new FormData()
       
-      // Adicionar todos os campos do serviço com prefixo 'service[]'
+      // Adicionar todos os campos do serviço/hospedagem com prefixo correto
       Object.keys(serviceData).forEach(key => {
         const value = serviceData[key]
         if (value !== null && value !== undefined && value !== '') {
-          formData.append(`service[${key}]`, value)
+          formData.append(`${paramKey}[${key}]`, value)
         }
       })
 
       // Adicionar novos arquivos
       newFiles.forEach((file) => {
-        formData.append('service[attachments][]', file, file.name)
+        formData.append(`${paramKey}[attachments][]`, file, file.name)
       })
 
       // Adicionar IDs de anexos a remover
       if (hasRemovedAttachments) {
         this.form.remove_attachment_ids.forEach(id => {
-          formData.append('service[remove_attachment_ids][]', id)
+          formData.append(`${paramKey}[remove_attachment_ids][]`, id)
         })
       }
 
       // Adicionar ordem dos anexos
       if (this.form.attachments_order && this.form.attachments_order.length > 0) {
         this.form.attachments_order.forEach(id => {
-          formData.append('service[attachments_order][]', id)
+          formData.append(`${paramKey}[attachments_order][]`, id)
         })
       }
 
-      return { useFormData: true, payload: formData }
+      return { useFormData: true, payload: formData, paramKey }
     },
 
     async saveBooking() {
       this.saving = true
       this.formErrors = {}
 
+      // Validar horários se check-in e check-out forem no mesmo dia
+      if (this.form.check_in_date === this.form.check_out_date) {
+        if (!this.form.check_in_time || !this.form.check_out_time) {
+          this.formErrors.general = 'Para check-in e check-out no mesmo dia, é necessário definir os horários'
+          this.saving = false
+          return
+        }
+
+        if (this.form.check_out_time <= this.form.check_in_time) {
+          this.formErrors.general = 'O horário de saída deve ser posterior ao horário de entrada quando no mesmo dia'
+          this.saving = false
+          return
+        }
+      }
+
       try {
         const { post, put, postFormData, putFormData } = useApi()
-        const { useFormData, payload } = this.buildServiceFormData()
+        const { useFormData, payload, paramKey } = this.buildServiceFormData()
         
         // Determinar o tipo de endpoint baseado no tipo de entrada
         const isService = this.entryType === 'cleaning'
         const endpoint = isService ? '/api/v1/services' : '/api/v1/stays'
-        const paramKey = isService ? 'service' : 'stay'
 
         let result
         if (this.editingBooking) {
@@ -1203,14 +1412,14 @@ export default {
         }
 
         if (result.error) {
-          this.formErrors.general = result.error.response?.data?.errors?.join(', ') || 'Erro ao salvar locação'
+          this.formErrors.general = result.error.response?.data?.errors?.join(', ') || 'Erro ao salvar hospedagem'
           return
         }
 
         this.closeModal()
         this.loadServicesByMonth()
       } catch (err) {
-        this.formErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao salvar locação'
+        this.formErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao salvar hospedagem'
       } finally {
         this.saving = false
       }

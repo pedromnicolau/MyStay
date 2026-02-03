@@ -1,15 +1,22 @@
 <template>
   <div class="space-y-6">
-    <!-- Seção de Foto de Perfil -->
-    <div class="border-b border-gray-200 pb-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Foto de Perfil</h3>
-      <ProfilePhotoUpload 
-        v-model="form.profile_image"
-        :name="form.name"
-        @upload-success="handlePhotoUploadSuccess"
-        @upload-error="handlePhotoUploadError"
-      />
-    </div>
+    <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo *</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
+            <input v-model="form.customer" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
+            <span class="text-sm font-medium text-gray-700">Cliente</span>
+          </label>
+          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
+            <input v-model="form.agent" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
+            <span class="text-sm font-medium text-gray-700">Corretor</span>
+          </label>
+          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
+            <input v-model="form.provider" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
+            <span class="text-sm font-medium text-gray-700">Prestador</span>
+          </label>
+        </div>
+      </div>
 
     <!-- Seção de Informações Pessoais -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,14 +65,14 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">CPF/CNPJ *</label>
         <input
-          v-model="form.cpf"
-          @input="applyCpfMask"
+          v-model="form.document"
+          @input="applyDocumentMask"
           type="text"
           required
-          placeholder="000.000.000-00"
-          maxlength="14"
+          placeholder="000.000.000-00 ou 00.000.000/0000-00"
+          maxlength="18"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
@@ -166,24 +173,6 @@
       </div>
 
       <div class="md:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Perfis *</label>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
-            <input v-model="form.customer" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
-            <span class="text-sm font-medium text-gray-700">Cliente</span>
-          </label>
-          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
-            <input v-model="form.agent" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
-            <span class="text-sm font-medium text-gray-700">Corretor</span>
-          </label>
-          <label class="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition cursor-pointer">
-            <input v-model="form.provider" type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" />
-            <span class="text-sm font-medium text-gray-700">Prestador</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
         <textarea
           v-model="form.note"
@@ -214,18 +203,16 @@
 
 <script>
 import SelectWithFilter from './SelectWithFilter.vue'
-import ProfilePhotoUpload from './ProfilePhotoUpload.vue'
 import { BRAZILIAN_STATES } from '../constants/brazilianStates.js'
 import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
 import { useViaCep } from '../composables/useViaCep.js'
 
-const { getWhatsAppLink, handlePhoneInput, handleCpfInput, handleRgInput } = useBrazilianMasks()
+const { getWhatsAppLink, handlePhoneInput, handleDocumentInput, handleCpfInput, handleRgInput } = useBrazilianMasks()
 const { handleCepLookup } = useViaCep()
 
 export default {
   components: {
-    SelectWithFilter,
-    ProfilePhotoUpload
+    SelectWithFilter
   },
 
   props: {
@@ -254,19 +241,12 @@ export default {
       handlePhoneInput(event, this.form)
     },
 
+    applyDocumentMask(event) {
+      handleDocumentInput(event, this.form)
+    },
+
     applyCpfMask(event) {
       handleCpfInput(event, this.form)
-    },
-
-    handlePhotoUploadSuccess(payload) {
-      // A foto foi processada, agora será salva junto com o formulário
-      console.log('Foto preparada para salvar:', payload)
-      this.$emit('photo-uploaded', payload)
-    },
-
-    handlePhotoUploadError(error) {
-      console.error('Erro ao fazer upload da foto:', error)
-      this.$emit('photo-error', error)
     },
 
     applyRgMask(event) {

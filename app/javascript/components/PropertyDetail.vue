@@ -237,6 +237,11 @@
               <p>Nenhuma comodidade selecionada</p>
             </div>
           </div>
+
+          <!-- Location Map -->
+          <div class="mb-8">
+            <PropertyMap :property="property" />
+          </div>
         </div>
 
         <!-- Right Column - Sidebar -->
@@ -249,12 +254,21 @@
               Entre em contato conosco para agendar uma visita ou obter mais informações sobre este imóvel.
             </p>
 
-            <button class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 transform hover:scale-105 mb-3">
-              Solicitar Informações
+            <button 
+              v-if="property.user && property.user.phone"
+              @click="redirectToWhatsApp"
+              class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 mb-3 flex items-center justify-center gap-2"
+            >
+              <i class="fab fa-whatsapp text-lg"></i>
+              Entrar em Contato
             </button>
 
-            <button class="w-full bg-gray-100 text-gray-900 font-bold py-3 rounded-lg hover:bg-gray-200 transition-all duration-200">
-              Agendar Visita
+            <button 
+              @click="showCalendarModal = true"
+              class="w-full bg-gray-100 text-gray-900 font-bold py-3 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-bed text-lg"></i>
+              Agendar Estadia
             </button>
 
             <!-- Info Box -->
@@ -278,23 +292,32 @@
               </div>
             </div>
           </div>
-
-          <!-- Share Card -->
-          <div class="mt-6 bg-white rounded-xl shadow p-4 text-center">
-            <p class="text-sm text-gray-600 mb-3 font-semibold">Compartilhe este imóvel</p>
-            <div class="flex gap-2 justify-center">
-              <button class="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" aria-label="Facebook">
-                <i class="fab fa-facebook-f text-lg"></i>
-              </button>
-              <button class="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors" aria-label="WhatsApp">
-                <i class="fab fa-whatsapp text-lg"></i>
-              </button>
-              <button class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors" aria-label="Email">
-                <i class="fas fa-envelope text-lg"></i>
-              </button>
-            </div>
-          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div v-if="showCalendarModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+         @click="showCalendarModal = false">
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6" @click.stop>
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-2xl font-bold text-gray-900">Agendar Estadia</h3>
+          <button @click="showCalendarModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">
+            ✕
+          </button>
+        </div>
+        
+        <div v-if="!property.user || !property.user.phone" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <p class="text-sm text-yellow-800">
+            <i class="fas fa-info-circle mr-2"></i>
+            Não há número de contato disponível para este imóvel.
+          </p>
+        </div>
+        
+        <PropertyCalendar 
+          :unavailable-dates="property.unavailable_dates || []"
+          @dates-selected="handleDateRangeSelected"
+        />
       </div>
     </div>
 
@@ -323,9 +346,15 @@
 
 <script>
 import { goBack } from '../router'
+import PropertyCalendar from './PropertyCalendar.vue'
+import PropertyMap from './PropertyMap.vue'
 
 export default {
   name: 'PropertyDetail',
+  components: {
+    PropertyCalendar,
+    PropertyMap
+  },
   props: {
     propertyId: {
       type: [String, Number],
@@ -340,7 +369,8 @@ export default {
       error: null,
       currentImageIndex: 0,
       isFavorite: false,
-      showAllImages: false
+      showAllImages: false,
+      showCalendarModal: false
     }
   },
 
@@ -414,6 +444,48 @@ export default {
         month: '2-digit',
         year: 'numeric'
       })
+    },
+
+    redirectToWhatsApp() {
+      if (!this.property.user || !this.property.user.phone) return
+      
+      // Remove non-digit characters from phone
+      const phone = this.property.user.phone.replace(/\D/g, '')
+      
+      // If phone doesn't start with country code, add Brazil's +55
+      const fullPhone = phone.length === 11 ? `55${phone}` : phone
+      
+      const message = `Olá, gostaria de obter mais informações sobre o imóvel: ${this.property.name}`
+      const encodedMessage = encodeURIComponent(message)
+      const whatsappUrl = `https://wa.me/${fullPhone}?text=${encodedMessage}`
+      
+      window.open(whatsappUrl, '_blank')
+    },
+
+    handleDateRangeSelected(dates) {
+      this.showCalendarModal = false
+      
+      // Check if user has phone number
+      if (!this.property.user || !this.property.user.phone) {
+        alert('Não há número de contato disponível para este imóvel. Por favor, tente mais tarde.')
+        return
+      }
+      
+      // Format dates for display
+      const checkInDate = new Date(dates.checkIn)
+      const checkOutDate = new Date(dates.checkOut)
+      
+      const formattedCheckIn = checkInDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+      const formattedCheckOut = checkOutDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+      
+      const phone = this.property.user.phone.replace(/\D/g, '')
+      const fullPhone = phone.length === 11 ? `55${phone}` : phone
+      
+      const message = `Olá! Gostaria de agendar uma estadia no imóvel "${this.property.name}" de ${formattedCheckIn} até ${formattedCheckOut}. Qual seria o valor da diária?`
+      const encodedMessage = encodeURIComponent(message)
+      const whatsappUrl = `https://wa.me/${fullPhone}?text=${encodedMessage}`
+      
+      window.open(whatsappUrl, '_blank')
     }
   },
 

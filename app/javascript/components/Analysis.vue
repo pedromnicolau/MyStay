@@ -3,7 +3,44 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Análise Financeira</h1>
-        <p class="text-gray-600 mt-1">Análise de receitas e despesas baseada nas locações</p>
+        <p class="text-gray-600 mt-1">Análise de receitas e despesas baseada nas hospedagens</p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Filtros</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Imóvel</label>
+            <select
+              v-model="filters.propertyId"
+              @change="loadBookings"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Todos os imóveis</option>
+              <option v-for="property in properties" :key="property.id" :value="property.id">
+                {{ property.name }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
+            <input
+              v-model="filters.startDate"
+              type="date"
+              @change="loadBookings"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
+            <input
+              v-model="filters.endDate"
+              type="date"
+              @change="loadBookings"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+        </div>
       </div>
 
       <div v-if="loading" class="flex justify-center items-center h-64">
@@ -75,10 +112,10 @@
           </div>
         </div>
 
-        <!-- Tabela de Locações -->
+        <!-- Tabela de Hospedagens -->
         <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">Detalhamento por Locação</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Detalhamento por Hospedagem</h2>
             <div class="flex items-center space-x-2">
               <button
                 @click="filterType = 'all'"
@@ -92,7 +129,7 @@
                 :class="filterType === 'booking' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'"
                 class="px-3 py-1 rounded-md text-sm font-medium transition"
               >
-                Locações
+                Hospedagens
               </button>
               <button
                 @click="filterType = 'cleaning'"
@@ -131,7 +168,7 @@
                       v-else
                       class="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 font-medium"
                     >
-                      Locação
+                      Hospedagem
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -158,7 +195,7 @@
                 </tr>
                 <tr v-if="filteredBookings.length === 0">
                   <td colspan="8" class="px-6 py-12 text-center text-gray-500">
-                    Nenhuma locação encontrada
+                    Nenhuma hospedagem encontrada
                   </td>
                 </tr>
               </tbody>
@@ -198,7 +235,7 @@
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Estatísticas</h3>
             <div class="space-y-3">
               <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <span class="text-sm text-gray-600">Total de Locações</span>
+                <span class="text-sm text-gray-600">Total de Hospedagens</span>
                 <span class="text-sm font-semibold text-gray-900">{{ bookingCount }}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-gray-100">
@@ -232,8 +269,14 @@ export default {
   data() {
     return {
       bookings: [],
+      properties: [],
       loading: false,
-      filterType: 'all'
+      filterType: 'all',
+      filters: {
+        propertyId: '',
+        startDate: '',
+        endDate: ''
+      }
     }
   },
 
@@ -290,6 +333,7 @@ export default {
   },
 
   mounted() {
+    this.loadProperties()
     this.loadBookings()
   },
 
@@ -297,8 +341,23 @@ export default {
     async loadBookings() {
       this.loading = true
       try {
-        const { getStays } = useApi()
-        const { data, error } = await getStays()
+        const { get } = useApi()
+        const params = new URLSearchParams()
+        
+        if (this.filters.propertyId) {
+          params.append('property_id', this.filters.propertyId)
+        }
+        if (this.filters.startDate) {
+          params.append('start_date', this.filters.startDate)
+        }
+        if (this.filters.endDate) {
+          params.append('end_date', this.filters.endDate)
+        }
+        
+        const queryString = params.toString()
+        const url = `/api/v1/stays${queryString ? '?' + queryString : ''}`
+        
+        const { data, error } = await get(url)
         if (!error) {
           this.bookings = data
         }
@@ -306,6 +365,18 @@ export default {
         console.error('Error loading bookings:', err)
       } finally {
         this.loading = false
+      }
+    },
+
+    async loadProperties() {
+      try {
+        const { getProperties } = useApi()
+        const { data, error } = await getProperties()
+        if (!error) {
+          this.properties = data
+        }
+      } catch (err) {
+        console.error('Error loading properties:', err)
       }
     },
 
