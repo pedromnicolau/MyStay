@@ -161,7 +161,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
     t.text "description"
     t.bigint "tenant_id", null: false
     t.index ["tenant_id", "name"], name: "index_service_types_on_tenant_and_name", unique: true
-    t.index ["tenant_id", "name"], name: "index_service_types_on_tenant_id_and_name"
     t.index ["tenant_id"], name: "index_service_types_on_tenant_id"
   end
 
@@ -171,6 +170,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["master_code"], name: "index_tenants_on_master_code", unique: true
+    t.index ["name"], name: "index_tenants_on_name"
   end
 
   create_table "users", force: :cascade do |t|
@@ -190,9 +190,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
     t.string "state"
     t.string "cpf"
     t.bigint "tenant_id", null: false
-    t.index ["cpf"], name: "index_users_on_cpf"
+    t.index ["tenant_id", "cpf"], name: "index_users_on_tenant_id_and_cpf"
     t.index ["tenant_id", "email"], name: "index_users_on_tenant_and_email", unique: true
-    t.index ["tenant_id", "email"], name: "index_users_on_tenant_id_and_email"
     t.index ["tenant_id"], name: "index_users_on_tenant_id"
   end
 

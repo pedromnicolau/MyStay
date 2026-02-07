@@ -4,17 +4,17 @@
       <div class="w-full max-w-md px-4">
         <div class="bg-white rounded-2xl shadow-xl p-8 md:p-10">
         <div class="text-center mb-8">
-          <h1 class="text-4xl font-bold text-gray-900">MyStay</h1>
-          <p class="text-gray-600 mt-2">Crie sua conta</p>
+          <h1 class="text-4xl font-bold text-gray-900">TripDay</h1>
+          <p class="text-gray-600 mt-2">Crie sua conta no TripDay</p>
         </div>
 
         <form @submit.prevent="handleRegister" class="space-y-4">
           <!-- Tenant Info -->
           <div class="border-b pb-4 mb-4">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">Informações do Tenant</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Informações do TripDay</h3>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Tenant</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nome do TripDay</label>
               <input
                 v-model="form.tenant.name"
                 type="text"
@@ -25,7 +25,7 @@
             </div>
 
             <div class="mt-3">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Master Code</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Código Mestre</label>
               <input
                 v-model="form.tenant.master_code"
                 type="text"

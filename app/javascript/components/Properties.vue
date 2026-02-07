@@ -637,7 +637,6 @@ export default {
         { key: 'neighborhood', label: 'Bairro' },
         { key: 'bedrooms', label: 'Quartos', format: (v) => v ?? 0 },
         { key: 'bathrooms', label: 'Banheiros', format: (v) => v ?? 0 },
-        { key: 'max_guests', label: 'Hóspedes', format: (v) => v ?? 0 },
         { 
           key: 'active', 
           label: 'Status',

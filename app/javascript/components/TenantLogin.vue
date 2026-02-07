@@ -4,13 +4,13 @@
       <div class="w-full max-w-md px-4">
         <div class="bg-white rounded-2xl shadow-xl p-8 md:p-10">
         <div class="text-center mb-8">
-          <h1 class="text-4xl font-bold text-gray-900">MyStay</h1>
-          <p class="text-gray-600 mt-2">Acesse sua conta</p>
+          <h1 class="text-4xl font-bold text-gray-900">TripDay</h1>
+          <p class="text-gray-600 mt-2">Acesse sua conta no TripDay</p>
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Master Code do Tenant</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Código Mestre do TripDay</label>
             <input
               v-model="form.master_code"
               type="text"

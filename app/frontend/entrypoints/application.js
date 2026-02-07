@@ -111,8 +111,8 @@ const Auth = {
       <div class="w-full max-w-md">
         <div class="bg-white rounded-2xl shadow-xl p-8 md:p-10">
           <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-900">MyStay</h1>
-            <p class="text-gray-600 mt-2">Gerenciamento Profissional de Estadias</p>
+            <h1 class="text-4xl font-bold text-gray-900">TripDay</h1>
+            <p class="text-gray-600 mt-2">Gerencie suas propriedades e hóspedes com facilidade</p>
           </div>
           <div class="mb-6 flex gap-2">
             <button
@@ -195,7 +195,7 @@ const Navbar = {
         <div class="h-16 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <div class="h-9 w-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">M</div>
-            <div class="text-xl font-semibold text-gray-900">MyStay</div>
+            <div class="text-xl font-semibold text-gray-900">TripDay</div>
           </div>
           <button class="md:hidden flex items-center gap-2 text-sm font-semibold text-gray-700" @click="mobileOpen = !mobileOpen">
             Menu

@@ -9,19 +9,19 @@
           </svg>
           <span>Voltar</span>
         </button>
-        <h1 class="text-3xl font-bold text-gray-900">Configurações do Tenant</h1>
-        <p class="text-gray-600 mt-2">Edite as informações do seu espaço</p>
+  <h1 class="text-3xl font-bold text-gray-900">Configurações do TripDay</h1>
+  <p class="text-gray-600 mt-2">Edite as informações do seu TripDay</p>
       </div>
 
       <!-- Formulário -->
       <div class="bg-white rounded-lg shadow-sm p-6">
         <form @submit.prevent="saveTenantSettings" class="space-y-6">
-          <!-- Informações do Tenant -->
+          <!-- Informações do TripDay -->
           <div>
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Informações do Tenant</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Informações do TripDay</h2>
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Tenant *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nome do TripDay *</label>
                 <input
                   v-model="form.name"
                   type="text"

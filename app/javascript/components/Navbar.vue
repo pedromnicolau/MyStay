@@ -7,7 +7,7 @@
           <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg flex items-center justify-center text-white font-bold text-lg mr-3 group-hover:shadow-md transition-shadow">
             M
           </div>
-          <span class="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">MyStay</span>
+          <span class="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">TripDay</span>
         </button>
 
         <!-- Menu de navegação no centro (desktop) -->
@@ -70,13 +70,7 @@
                   <i class="fa-solid fa-house text-gray-500 mr-3"></i>
                   Imóveis
                 </button>
-                <button
-                  @click="navigate('expenses')"
-                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                >
-                  <i class="fa-solid fa-money-bill-wave text-gray-500 mr-3"></i>
-                  Despesas
-                </button>
+                
               </div>
             </transition>
           </div>
@@ -86,6 +80,13 @@
             class="text-gray-700 hover:text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-50"
           >
             Hospedagens
+          </button>
+
+          <button
+            @click="navigate('expenses')"
+            class="text-gray-700 hover:text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-50"
+          >
+            Despesas
           </button>
 
           <button
@@ -217,13 +218,7 @@
               <i class="fa-solid fa-house text-gray-500 mr-2"></i>
               Imóveis
             </button>
-            <button
-              @click="navigate('expenses')"
-              class="w-full text-left flex items-center text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm transition"
-            >
-              <i class="fa-solid fa-money-bill-wave text-gray-500 mr-2"></i>
-              Despesas
-            </button>
+            
           </div>
         </div>
         <button
@@ -231,6 +226,12 @@
           class="w-full text-left block text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-medium transition"
         >
           Hospedagens
+        </button>
+        <button
+          @click="navigate('expenses')"
+          class="w-full text-left block text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg text-sm font-medium transition"
+        >
+          Despesas
         </button>
         <button
           @click="navigate('analysis')"

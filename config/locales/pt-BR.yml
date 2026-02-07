@@ -99,5 +99,5 @@ pt-BR:
         last_name: "Sobrenome"
         phone: "Telefone"
       tenant:
-        name: "Nome do Tenant"
+        name: "Nome do TripDay"
         master_code: "Código Mestre"

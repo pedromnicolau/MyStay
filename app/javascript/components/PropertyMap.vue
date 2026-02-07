@@ -116,7 +116,7 @@ export default {
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
           {
             headers: {
-              'User-Agent': 'MyStay Property Viewer'
+              'User-Agent': 'TripDay Property Viewer'
             }
           }
         )
