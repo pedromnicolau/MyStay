@@ -1,5 +1,4 @@
 class ApplicationController < ActionController::Base
-  # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
 
   protect_from_forgery with: :exception
@@ -68,5 +67,55 @@ class ApplicationController < ActionController::Base
 
   def current_tenant
     @current_tenant
+  end
+
+  def pagy_metadata(pagy)
+    {
+      page: pagy[:page],
+      items: pagy[:items],
+      count: pagy[:count],
+      pages: pagy[:pages],
+      last: pagy[:last],
+      from: pagy[:from],
+      to: pagy[:to],
+      prev: pagy[:prev],
+      next: pagy[:next]
+    }
+  end
+
+  def pagy(collection, vars = {})
+    items = vars[:items] || 20
+    page = (params[:page] || 1).to_i
+    page = 1 if page < 1
+
+    count = collection.count
+    pages = (count.to_f / items).ceil
+    pages = 1 if pages < 1
+    page = pages if page > pages
+
+    from = ((page - 1) * items) + 1
+    to = [ page * items, count ].min
+    offset = (page - 1) * items
+
+    prev_page = page > 1 ? page - 1 : nil
+    next_page = page < pages ? page + 1 : nil
+
+    pagy_obj = {
+      page: page,
+      items: items,
+      count: count,
+      pages: pages,
+      last: pages,
+      from: from,
+      to: to,
+      prev: prev_page,
+      next: next_page,
+      offset: offset,
+      limit: items
+    }
+
+    records = collection.offset(offset).limit(items)
+
+    [ pagy_obj, records ]
   end
 end

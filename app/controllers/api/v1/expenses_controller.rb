@@ -2,9 +2,8 @@ module Api
   module V1
     class ExpensesController < MovementsController
       def index
-        movements = current_user.movements.where(tenant_id: current_tenant.id, type: "Expense").with_attached_attachments.order(created_at: :desc)
+        movements = current_user.movements.where(tenant_id: current_tenant.id, type: "Expense").includes(:customer, :property).order(created_at: :desc)
 
-        # Filtrar por datas se fornecidas
         if params[:start_date].present? && params[:end_date].present?
           start_date = Date.parse(params[:start_date])
           end_date = Date.parse(params[:end_date])
@@ -16,7 +15,12 @@ module Api
           )
         end
 
-        render json: movements.map { |movement| serialize_movement(movement) }, status: :ok
+        pagy, records = pagy(movements, items: 20)
+
+        render json: {
+          data: records.map { |movement| serialize_movement_summary(movement) },
+          pagy: pagy_metadata(pagy)
+        }, status: :ok
       end
 
       private

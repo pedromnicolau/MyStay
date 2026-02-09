@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_08_190046) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_09_172757) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -146,6 +146,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_08_190046) do
     t.float "latitude"
     t.float "longitude"
     t.boolean "show_on_main_page", default: false, null: false
+    t.bigint "main_attachment_id"
+    t.index ["main_attachment_id"], name: "index_properties_on_main_attachment_id"
     t.index ["tenant_id", "active"], name: "index_properties_on_tenant_id_and_active"
     t.index ["tenant_id", "city"], name: "index_properties_on_tenant_id_and_city"
     t.index ["tenant_id", "name"], name: "index_properties_on_tenant_id_and_name", unique: true

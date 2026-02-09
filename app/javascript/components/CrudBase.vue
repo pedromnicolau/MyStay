@@ -14,6 +14,8 @@
         </button>
       </div>
 
+      <slot name="filters" :load-items="applyFilters"></slot>
+
       <div v-if="loading" class="flex justify-center items-center h-64">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
@@ -88,15 +90,106 @@
             </tbody>
           </table>
         </div>
+        
+        <div v-if="pagination.count > 0" class="px-6 py-4 border-t border-gray-200 bg-white">
+          <div v-if="pagination.pages <= 1" class="flex items-center justify-center">
+            <p class="text-sm text-gray-700">
+              Total de
+              <span class="font-medium">{{ pagination.count }}</span>
+              {{ pagination.count === 1 ? 'registro' : 'registros' }}
+            </p>
+          </div>
+          
+          <div v-else class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button
+                @click="changePage(pagination.page - 1)"
+                :disabled="!pagination.prev"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                @click="changePage(pagination.page + 1)"
+                :disabled="!pagination.next"
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próxima
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div class="flex items-center space-x-4">
+              <p class="text-sm text-gray-700">
+                Mostrando
+                <span class="font-medium">{{ pagination.from }}</span>
+                a
+                <span class="font-medium">{{ pagination.to }}</span>
+                de
+                <span class="font-medium">{{ pagination.count }}</span>
+                resultados
+              </p>
+            </div>
+            <div>
+              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button
+                  @click="changePage(pagination.page - 1)"
+                  :disabled="!pagination.prev"
+                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                
+                <template v-for="page in visiblePages" :key="page">
+                  <button
+                    v-if="page !== '...'"
+                    @click="changePage(page)"
+                    :class="[
+                      'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
+                      page === pagination.page
+                        ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                  <span
+                    v-else
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                  >
+                    ...
+                  </span>
+                </template>
+
+                <button
+                  @click="changePage(pagination.page + 1)"
+                  :disabled="!pagination.next"
+                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+          </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div
-      v-if="isModalOpen"
+      v-if="isModalOpen || loadingItemDetails"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeModal"
+      @click.self="!loadingItemDetails && closeModal()"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div v-if="loadingItemDetails" class="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+        <p class="text-gray-600">Carregando dados...</p>
+      </div>
+      
+      <div v-else class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
           <h2 class="text-xl font-semibold text-gray-900">
             {{ editingItem ? 'Editar' : 'Novo' }} {{ singularTitle }}
@@ -340,7 +433,17 @@ export default {
       deleteErrorMessage: null,
       relatedStays: [],
       deletingStayId: null,
-      relatedStayToDelete: null
+      relatedStayToDelete: null,
+      filterParams: {},
+      loadingItemDetails: false,
+      pagination: {
+        page: 1,
+        items: 20,
+        count: 0,
+        pages: 0,
+        from: 0,
+        to: 0
+      }
     }
   },
 
@@ -350,6 +453,34 @@ export default {
         return []
       }
       return this.items.filter(item => item && item.id)
+    },
+
+    visiblePages() {
+      const current = this.pagination.page
+      const total = this.pagination.pages
+      const delta = 2
+      const range = []
+      const rangeWithDots = []
+
+      for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+        range.push(i)
+      }
+
+      if (current - delta > 2) {
+        rangeWithDots.push(1, '...')
+      } else {
+        rangeWithDots.push(1)
+      }
+
+      rangeWithDots.push(...range)
+
+      if (current + delta < total - 1) {
+        rangeWithDots.push('...', total)
+      } else if (total > 1) {
+        rangeWithDots.push(total)
+      }
+
+      return rangeWithDots
     }
   },
 
@@ -358,23 +489,45 @@ export default {
   },
 
   methods: {
-    async loadItems() {
+    async loadItems(params = {}) {
       this.loading = true
       this.error = null
+      this.filterParams = params
 
       try {
         const userToken = localStorage.getItem('userToken')
         const tenantToken = localStorage.getItem('tenantToken')
-        const response = await axios.get(this.apiEndpoint, {
+        
+        const allParams = { ...params, page: this.pagination.page }
+        const queryString = new URLSearchParams(allParams).toString()
+        const url = queryString ? `${this.apiEndpoint}?${queryString}` : this.apiEndpoint
+        
+        const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` }
         })
         
-        this.items = Array.isArray(response.data) ? response.data : []
+        if (response.data.data && response.data.pagy) {
+          this.items = Array.isArray(response.data.data) ? response.data.data : []
+          this.pagination = response.data.pagy
+        } else {
+          this.items = Array.isArray(response.data) ? response.data : []
+        }
       } catch (err) {
         this.error = err.response?.data?.error || 'Erro ao carregar os dados'
       } finally {
         this.loading = false
       }
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.loadItems(this.filterParams)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    },
+
+    applyFilters(params = {}) {
+      this.pagination.page = 1
+      this.loadItems(params)
     },
 
     openCreateModal() {
@@ -384,11 +537,27 @@ export default {
       this.isModalOpen = true
     },
 
-    editItem(item) {
-      this.editingItem = item
-      this.form = { ...this.formFields, ...item }
+    async editItem(item) {
+      this.loadingItemDetails = true
       this.formErrors = {}
-      this.isModalOpen = true
+      
+      try {
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        const baseEndpoint = this.apiEndpoint.split('?')[0]
+        
+        const response = await axios.get(`${baseEndpoint}/${item.id}`, {
+          headers: { Authorization: `Bearer ${userToken}`, 'Tenant-Authorization': `Bearer ${tenantToken}` }
+        })
+        
+        this.editingItem = response.data
+        this.form = { ...this.formFields, ...response.data }
+        this.isModalOpen = true
+      } catch (err) {
+        this.formErrors.general = err.response?.data?.error || 'Erro ao carregar os dados'
+      } finally {
+        this.loadingItemDetails = false
+      }
     },
 
     closeModal() {
@@ -396,6 +565,7 @@ export default {
       this.editingItem = null
       this.form = { ...this.formFields }
       this.formErrors = {}
+      this.loadItems(this.filterParams)
     },
 
     async saveItem() {
@@ -430,16 +600,40 @@ export default {
             ? this.customUpdateEndpoint(this.editingItem.id)
             : `${baseEndpoint}/${this.editingItem.id}`
           
-          await axios.patch(updateEndpoint, payload, requestConfig)
+          if (useFormData) {
+            payload.append('_method', 'PATCH')
+            await axios.post(updateEndpoint, payload, requestConfig)
+          } else {
+            await axios.patch(updateEndpoint, payload, requestConfig)
+          }
         } else {
           await axios.post(baseEndpoint, payload, requestConfig)
         }
 
         this.closeModal()
-        this.loadItems()
+        this.loadItems(this.filterParams)
       } catch (err) {
         console.error('Erro ao salvar:', err)
-        this.formErrors.general = err.response?.data?.errors?.join(', ') || err.message || 'Erro ao salvar'
+        console.error('Response data:', err.response?.data)
+        
+        const errorData = err.response?.data
+        let errorMessage = 'Erro ao salvar'
+        
+        if (errorData?.errors) {
+          if (Array.isArray(errorData.errors)) {
+            errorMessage = errorData.errors.join(', ')
+          } else if (typeof errorData.errors === 'string') {
+            errorMessage = errorData.errors
+          }
+        } else if (errorData?.error) {
+          errorMessage = errorData.error
+        } else if (errorData?.message) {
+          errorMessage = errorData.message
+        } else if (err.message) {
+          errorMessage = err.message
+        }
+        
+        this.formErrors.general = errorMessage
       } finally {
         this.saving = false
       }
@@ -478,10 +672,14 @@ export default {
         const value = cleanedForm[key]
 
         if (Array.isArray(value)) {
-          value.forEach(item => {
-            if (item === undefined || item === null) return
-            formData.append(`${resourceName}[${key}][]`, item)
-          })
+          if (value.length === 0) {
+            formData.append(`${resourceName}[${key}][]`, '')
+          } else {
+            value.forEach(item => {
+              if (item === undefined || item === null) return
+              formData.append(`${resourceName}[${key}][]`, item)
+            })
+          }
         } else if (value !== undefined) {
           formData.append(`${resourceName}[${key}]`, value === null ? '' : value)
         }

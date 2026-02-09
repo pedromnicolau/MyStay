@@ -4,8 +4,14 @@ class Api::V1::UsersController < ApplicationController
   before_action :set_user, only: [ :show, :update_user, :destroy ]
 
   def index
-    users = User.where(tenant_id: current_tenant.id).with_attached_profile_image.order(created_at: :desc)
-    render json: users.map { |user| format_user(user) }, status: :ok
+    users = User.where(tenant_id: current_tenant.id).order(created_at: :desc)
+
+    pagy, records = pagy(users, items: 20)
+
+    render json: {
+      data: records.map { |user| format_user_summary(user) },
+      pagy: pagy_metadata(pagy)
+    }, status: :ok
   end
 
   def show
@@ -32,7 +38,7 @@ class Api::V1::UsersController < ApplicationController
   def destroy
     @user.destroy
     render json: { message: "Usuário removido" }, status: :ok
-  rescue ActiveRecord::InvalidForeignKey => e
+  rescue ActiveRecord::InvalidForeignKey
     render json: {
       error: "Não é possível excluir este usuário pois existem registros vinculados a ele.",
       message: "Por favor, primeiro remova ou atualize os registros relacionados antes de excluir este usuário."
@@ -84,7 +90,7 @@ class Api::V1::UsersController < ApplicationController
   private
 
   def set_user
-    @user = User.where(tenant_id: current_tenant.id).find(params[:id])
+    @user = User.where(tenant_id: current_tenant.id).with_attached_profile_image.find(params[:id])
   end
 
   def user_creation_params
@@ -160,6 +166,16 @@ class Api::V1::UsersController < ApplicationController
       profile_image: user.profile_image.attached? ? url_for(user.profile_image) : nil,
       created_at: user.created_at,
       updated_at: user.updated_at
+    }
+  end
+
+  def format_user_summary(user)
+    {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      phone: user.phone
     }
   end
 end

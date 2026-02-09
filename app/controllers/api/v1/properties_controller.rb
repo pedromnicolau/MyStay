@@ -4,8 +4,17 @@ class Api::V1::PropertiesController < ApplicationController
   before_action :set_property, only: [ :show, :update, :destroy ]
 
   def index
-    properties = Property.where(tenant_id: current_tenant.id).includes(:user).with_attached_attachments.order(created_at: :desc)
-    render json: properties.map { |property| serialize_property(property) }, status: :ok
+    properties = Property.where(tenant_id: current_tenant.id)
+      .with_attached_attachments
+      .includes(:user)
+      .order(created_at: :desc)
+
+    pagy, records = pagy(properties, items: 20)
+
+    render json: {
+      data: records.map { |property| serialize_property_summary(property) },
+      pagy: pagy_metadata(pagy)
+    }, status: :ok
   end
 
   def show
@@ -41,14 +50,18 @@ class Api::V1::PropertiesController < ApplicationController
   def destroy
     @property.destroy
     render json: { message: "Imóvel removido" }, status: :ok
-  rescue ActiveRecord::InvalidForeignKey => e
+  rescue ActiveRecord::InvalidForeignKey
     render_deletion_conflict_error
   end
 
   private
 
   def set_property
-    @property = Property.where(tenant_id: current_tenant.id).includes(:user).with_attached_attachments.find(params[:id])
+    @property = Property.where(tenant_id: current_tenant.id)
+      .includes(:user)
+      .with_attached_attachments
+      .with_attached_contract
+      .find(params[:id])
   end
 
   def property_params
@@ -65,8 +78,8 @@ class Api::V1::PropertiesController < ApplicationController
 
   def property_payload
     permitted = property_params
-    permitted = permitted.except(:remove_attachment_ids, :attachments, :contract)
-    permitted = permitted.except(:main_attachment_id, :main_attachment_name) unless Property.new.respond_to?(:main_attachment_id)
+    permitted = permitted.except(:remove_attachment_ids, :attachments, :contract, :main_attachment_name)
+    permitted = permitted.except(:main_attachment_id) unless Property.new.respond_to?(:main_attachment_id)
     permitted
   end
 
@@ -112,7 +125,6 @@ class Api::V1::PropertiesController < ApplicationController
     serialized["attachments_order"] = property.attachments_order || [] if property.respond_to?(:attachments_order)
     serialized["contract"] = contract_payload(property) if property.contract.attached?
 
-    # Include user information
     if property.user
       serialized["user"] = {
         id: property.user.id,
@@ -123,6 +135,46 @@ class Api::V1::PropertiesController < ApplicationController
     end
 
     serialized
+  end
+
+  def serialize_property_summary(property)
+    images = property.attachments.map { |attachment| url_for(attachment) }
+
+    {
+      id: property.id,
+      name: property.name,
+      address: property.address,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      state: property.state,
+      active: property.active,
+      show_on_main_page: property.show_on_main_page,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      max_guests: property.max_guests,
+      images: images,
+      main_image: images.first,
+      tenant_id: property.tenant_id,
+      description_short: property.description&.truncate(100),
+      amenities: {
+        air_conditioning: property.air_conditioning,
+        wifi: property.wifi,
+        tv: property.tv,
+        kitchen: property.kitchen,
+        parking_included: property.parking_included,
+        washing_machine: property.washing_machine,
+        pool: property.pool,
+        barbecue_grill: property.barbecue_grill,
+        balcony: property.balcony,
+        pet_friendly: property.pet_friendly,
+        wheelchair_accessible: property.wheelchair_accessible
+      },
+      user: property.user ? {
+        id: property.user.id,
+        first_name: property.user.first_name,
+        last_name: property.user.last_name
+      } : nil
+    }
   end
 
   def contract_payload(property)

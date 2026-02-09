@@ -5,10 +5,21 @@ class Api::V1::PeopleController < ApplicationController
 
   def index
     people = current_user.people.where(tenant_id: current_tenant.id).order(created_at: :desc)
+
+    people = people.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+    people = people.where("city ILIKE ?", "%#{params[:city]}%") if params[:city].present?
+
     role = params[:role].presence || params[:type].presence
     role = normalize_role(role) if role
     people = filter_by_role(people, role) if role
-    render json: people, status: :ok
+
+    pagy, records = pagy(people, items: 20)
+    records = records.select(:id, :name, :document, :phone, :email, :city, :state, :customer, :agent, :provider, :blocked)
+
+    render json: {
+      data: records,
+      pagy: pagy_metadata(pagy)
+    }, status: :ok
   end
 
   def show

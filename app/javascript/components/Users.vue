@@ -9,6 +9,28 @@
   >
     <template #form="{ form, errors }">
       <div class="space-y-4">
+        <!-- Avatar Section -->
+        <div class="flex justify-center mb-6">
+          <div class="relative">
+            <div class="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center border-4 border-white shadow-lg">
+              <img
+                v-if="form.profile_image"
+                :src="form.profile_image"
+                :alt="`${form.first_name || 'Usuário'} ${form.last_name || ''}`"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="text-3xl font-semibold text-indigo-600">
+                {{ getUserInitials(form) }}
+              </div>
+            </div>
+            <div class="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-gray-100">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
@@ -153,6 +175,21 @@ export default {
   methods: {
     getUpdateEndpoint(id) {
       return `/api/v1/users/${id}/update_user`
+    },
+
+    getUserInitials(form) {
+      const first = (form.first_name || '').trim()
+      const last = (form.last_name || '').trim()
+      
+      if (first && last) {
+        return `${first[0]}${last[0]}`.toUpperCase()
+      } else if (first) {
+        return first.substring(0, 2).toUpperCase()
+      } else if (form.email) {
+        return form.email.substring(0, 2).toUpperCase()
+      }
+      
+      return 'U'
     }
   }
 }

@@ -7,11 +7,8 @@ module Api
       before_action :set_movement_with_associations, only: [ :contract ]
 
       def index
-        # Por padrão, excluir Expenses (calendário de hospedagens mostra apenas Stay e Service)
-        # Expenses tem seu próprio endpoint
-        movements = current_user.movements.where.not(type: "Expense").with_attached_attachments.order(created_at: :desc)
+        movements = current_user.movements.where.not(type: "Expense").includes(:customer, :property, :seller, :service_type).order(created_at: :desc)
 
-        # Filtrar por datas se fornecidas
         if params[:start_date].present? && params[:end_date].present?
           start_date = Date.parse(params[:start_date])
           end_date = Date.parse(params[:end_date])
@@ -23,7 +20,7 @@ module Api
           )
         end
 
-        render json: movements.map { |movement| serialize_movement(movement) }, status: :ok
+        render json: movements.map { |movement| serialize_movement_summary(movement) }, status: :ok
       end
 
       def show
@@ -136,14 +133,30 @@ module Api
             service_type: { only: [ :id, :name, :description ] }
           }
         )
-        # Garantir que o type está sempre presente no JSON
         serialized["type"] = movement.type
-        # Converter times para formato HH:MM para o frontend
         serialized["check_in_time"] = movement.check_in_time&.strftime("%H:%M")
         serialized["check_out_time"] = movement.check_out_time&.strftime("%H:%M")
         serialized["attachments"] = attachments_payload(movement)
         serialized["attachments_order"] = movement.attachments_order || [] if movement.respond_to?(:attachments_order)
         serialized
+      end
+
+      def serialize_movement_summary(movement)
+        {
+          id: movement.id,
+          type: movement.type,
+          check_in_date: movement.check_in_date,
+          check_out_date: movement.check_out_date,
+          check_in_time: movement.check_in_time&.strftime("%H:%M"),
+          check_out_time: movement.check_out_time&.strftime("%H:%M"),
+          customer: movement.customer ? { id: movement.customer.id, name: movement.customer.name } : nil,
+          property: movement.property ? { id: movement.property.id, name: movement.property.name } : nil,
+          seller: movement.seller ? { id: movement.seller.id, name: movement.seller.name } : nil,
+          service_type: movement.service_type ? { id: movement.service_type.id, name: movement.service_type.name } : nil,
+          total_price: movement.total_price,
+          total_due: movement.total_due,
+          total_payable: movement.total_payable
+        }
       end
 
       def attachments_payload(movement)
@@ -169,7 +182,10 @@ module Api
       end
 
       def set_movement
-        @movement = current_user.movements.where(tenant_id: current_tenant.id).with_attached_attachments.find(params[:id])
+        @movement = current_user.movements.where(tenant_id: current_tenant.id)
+          .includes(:customer, :property, :seller, :service_type)
+          .with_attached_attachments
+          .find(params[:id])
       end
 
       def set_movement_with_associations

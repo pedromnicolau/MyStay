@@ -32,7 +32,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="expense in sortedExpenses" :key="expense.id" class="hover:bg-gray-50">
+              <tr v-for="expense in expenses" :key="expense.id" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {{ formatDate(expense.check_in_date) }}
                 </td>
@@ -79,15 +79,106 @@
             </tbody>
           </table>
         </div>
+
+        <div v-if="pagination.count > 0" class="px-6 py-4 border-t border-gray-200 bg-white">
+          <div v-if="pagination.pages <= 1" class="flex items-center justify-center">
+            <p class="text-sm text-gray-700">
+              Total de
+              <span class="font-medium">{{ pagination.count }}</span>
+              {{ pagination.count === 1 ? 'registro' : 'registros' }}
+            </p>
+          </div>
+          
+          <div v-else class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button
+                @click="changePage(pagination.page - 1)"
+                :disabled="!pagination.prev"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                @click="changePage(pagination.page + 1)"
+                :disabled="!pagination.next"
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próxima
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div class="flex items-center space-x-4">
+                <p class="text-sm text-gray-700">
+                  Mostrando
+                  <span class="font-medium">{{ pagination.from }}</span>
+                  a
+                  <span class="font-medium">{{ pagination.to }}</span>
+                  de
+                  <span class="font-medium">{{ pagination.count }}</span>
+                  resultados
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    @click="changePage(pagination.page - 1)"
+                    :disabled="!pagination.prev"
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                  
+                  <template v-for="page in visiblePages" :key="page">
+                    <button
+                      v-if="page !== '...'"
+                      @click="changePage(page)"
+                      :class="[
+                        'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
+                        page === pagination.page
+                          ? 'z-10 bg-red-50 border-red-500 text-red-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      ]"
+                    >
+                      {{ page }}
+                    </button>
+                    <span
+                      v-else
+                      class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                    >
+                      ...
+                    </span>
+                  </template>
+
+                  <button
+                    @click="changePage(pagination.page + 1)"
+                    :disabled="!pagination.next"
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div
-      v-if="isModalOpen"
+      v-if="isModalOpen || loadingExpenseDetails"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeModal"
+      @click.self="!loadingExpenseDetails && closeModal()"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div v-if="loadingExpenseDetails" class="bg-white rounded-lg shadow-xl p-8 flex flex-col items-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
+        <p class="text-gray-600">Carregando dados...</p>
+      </div>
+
+      <div v-else class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0 bg-white">
           <h2 class="text-xl font-semibold text-gray-900">
             {{ editingExpense ? 'Editar Despesa' : 'Nova Despesa' }}
@@ -231,6 +322,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 import ConfirmationModal from './ConfirmationModal.vue'
 import PersonSelect from './PersonSelect.vue'
 import AttachmentManager from './AttachmentManager.vue'
@@ -256,6 +348,7 @@ export default {
       providers: [],
       properties: [],
       loading: false,
+      loadingExpenseDetails: false,
       isModalOpen: false,
       editingExpense: null,
       saving: false,
@@ -266,17 +359,21 @@ export default {
       quickPersonModalOpen: {
         isOpen: false,
         type: null
+      },
+      pagination: {
+        page: 1,
+        items: 20,
+        count: 0,
+        pages: 0,
+        from: 0,
+        to: 0,
+        prev: null,
+        next: null
       }
     }
   },
 
   computed: {
-    sortedExpenses() {
-      return [...this.expenses].sort((a, b) => {
-        return new Date(b.check_in_date) - new Date(a.check_in_date)
-      })
-    },
-
     providerOptions() {
       return [
         { value: 'new', label: '+ Novo Prestador' },
@@ -288,11 +385,39 @@ export default {
       const id = String(this.form.customer_id || '')
       if (!id) return null
       return this.providers.find(p => String(p.id) === id) || null
+    },
+
+    visiblePages() {
+      const current = this.pagination.page
+      const total = this.pagination.pages
+      const delta = 2
+      const range = []
+      const rangeWithDots = []
+
+      for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+        range.push(i)
+      }
+
+      if (current - delta > 2) {
+        rangeWithDots.push(1, '...')
+      } else {
+        rangeWithDots.push(1)
+      }
+
+      rangeWithDots.push(...range)
+
+      if (current + delta < total - 1) {
+        rangeWithDots.push('...', total)
+      } else if (total > 1) {
+        rangeWithDots.push(total)
+      }
+
+      return rangeWithDots
     }
   },
 
   mounted() {
-    this.loadData()
+    this.loadExpenses()
   },
 
   methods: {
@@ -309,46 +434,62 @@ export default {
       }
     },
 
-    async loadData() {
+    async loadExpenses() {
       this.loading = true
       try {
-        const { getPeople, getProperties } = useApi()
-        await Promise.all([
-          this.loadExpenses(),
-          this.loadProviders(getPeople),
-          this.loadProperties(getProperties)
-        ])
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        
+        const params = { page: this.pagination.page }
+        const queryString = new URLSearchParams(params).toString()
+        const url = `/api/v1/expenses?${queryString}`
+        
+        const response = await axios.get(url, {
+          headers: { 
+            Authorization: `Bearer ${userToken}`, 
+            'Tenant-Authorization': `Bearer ${tenantToken}` 
+          }
+        })
+        
+        if (response.data.data && response.data.pagy) {
+          this.expenses = Array.isArray(response.data.data) ? response.data.data : []
+          this.pagination = response.data.pagy
+        } else {
+          this.expenses = Array.isArray(response.data) ? response.data : []
+        }
+      } catch (err) {
+        console.error('Error loading expenses:', err)
       } finally {
         this.loading = false
       }
     },
 
-    async loadExpenses() {
+    async loadProviders() {
       try {
-        const { get } = useApi()
-        const { data, error } = await get('/api/v1/expenses')
-        if (!error) this.expenses = data
-      } catch (err) {
-        console.error('Error loading expenses:', err)
-      }
-    },
-
-    async loadProviders(apiMethod) {
-      try {
-        const { data, error } = await apiMethod('provider')
-        if (!error) this.providers = data.filter(p => !p.blocked)
+        const { getPeople } = useApi()
+        const { data, error } = await getPeople('provider')
+        if (!error) {
+          this.providers = data.filter(p => !p.blocked)
+        }
       } catch (err) {
         console.error('Error loading providers:', err)
       }
     },
 
-    async loadProperties(apiMethod) {
+    async loadProperties() {
       try {
-        const { data, error } = await apiMethod()
+        const { getProperties } = useApi()
+        const { data, error } = await getProperties()
         if (!error) this.properties = data
       } catch (err) {
         console.error('Error loading properties:', err)
       }
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.loadExpenses()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     },
 
     formatDate(dateString) {
@@ -381,30 +522,61 @@ export default {
       })
     },
 
-    openCreateModal() {
+    async openCreateModal() {
       this.editingExpense = null
       this.form = this.getEmptyForm()
       this.formErrors = {}
       this.isModalOpen = true
+      
+      await Promise.all([
+        this.loadProviders(),
+        this.loadProperties()
+      ])
     },
 
-    editExpense(expense) {
-      this.editingExpense = expense
-      
-      const formatMoneyValue = (value) => {
-        const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : parseFloat(value || 0)
-        return this.formatCurrency(numValue)
-      }
-      
-      this.form = {
-        ...this.getEmptyForm(),
-        ...expense,
-        customer_id: expense.customer_id ? String(expense.customer_id) : '',
-        property_id: expense.property_id || '',
-        total_price: formatMoneyValue(expense.total_price)
-      }
+    async editExpense(expense) {
+      this.loadingExpenseDetails = true
       this.formErrors = {}
-      this.isModalOpen = true
+      
+      try {
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        
+        const response = await axios.get(`/api/v1/expenses/${expense.id}`, {
+          headers: { 
+            Authorization: `Bearer ${userToken}`, 
+            'Tenant-Authorization': `Bearer ${tenantToken}` 
+          }
+        })
+        
+        this.editingExpense = response.data
+        
+        const formatMoneyValue = (value) => {
+          const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : parseFloat(value || 0)
+          return this.formatCurrency(numValue)
+        }
+        
+        this.form = {
+          ...this.getEmptyForm(),
+          ...response.data,
+          customer_id: response.data.customer_id ? String(response.data.customer_id) : '',
+          property_id: response.data.property_id || '',
+          total_price: formatMoneyValue(response.data.total_price),
+          attachments: response.data.attachments || [],
+          attachments_order: response.data.attachments_order || []
+        }
+        
+        await Promise.all([
+          this.loadProviders(),
+          this.loadProperties()
+        ])
+        
+        this.isModalOpen = true
+      } catch (err) {
+        this.formErrors.general = err.response?.data?.error || 'Erro ao carregar os dados'
+      } finally {
+        this.loadingExpenseDetails = false
+      }
     },
 
     closeModal() {
@@ -422,6 +594,7 @@ export default {
       this.editingExpense = null
       this.form = this.getEmptyForm()
       this.formErrors = {}
+      this.loadExpenses()
     },
 
     buildExpenseFormData() {
@@ -488,31 +661,31 @@ export default {
       this.formErrors = {}
 
       try {
-        const { post, put, postFormData, putFormData } = useApi()
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        const headers = { 
+          Authorization: `Bearer ${userToken}`, 
+          'Tenant-Authorization': `Bearer ${tenantToken}` 
+        }
+
         const { useFormData, payload } = this.buildExpenseFormData()
 
-        let result
         if (this.editingExpense) {
           if (useFormData) {
-            result = await putFormData(`/api/v1/expenses/${this.editingExpense.id}`, payload)
+            payload.append('_method', 'PATCH')
+            await axios.post(`/api/v1/expenses/${this.editingExpense.id}`, payload, { headers })
           } else {
-            result = await put(`/api/v1/expenses/${this.editingExpense.id}`, { expense: payload })
+            await axios.patch(`/api/v1/expenses/${this.editingExpense.id}`, { expense: payload }, { headers })
           }
         } else {
           if (useFormData) {
-            result = await postFormData('/api/v1/expenses', payload)
+            await axios.post('/api/v1/expenses', payload, { headers })
           } else {
-            result = await post('/api/v1/expenses', { expense: payload })
+            await axios.post('/api/v1/expenses', { expense: payload }, { headers })
           }
         }
 
-        if (result.error) {
-          this.formErrors.general = result.error.response?.data?.errors?.join(', ') || 'Erro ao salvar despesa'
-          return
-        }
-
         this.closeModal()
-        this.loadExpenses()
       } catch (err) {
         this.formErrors.general = err.response?.data?.errors?.join(', ') || 'Erro ao salvar despesa'
       } finally {
@@ -528,14 +701,18 @@ export default {
       this.deleting = true
 
       try {
-        const { delete: deleteApi } = useApi()
-        const { error } = await deleteApi(`/api/v1/expenses/${this.deleteConfirmExpense.id}`)
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        
+        await axios.delete(`/api/v1/expenses/${this.deleteConfirmExpense.id}`, {
+          headers: { 
+            Authorization: `Bearer ${userToken}`, 
+            'Tenant-Authorization': `Bearer ${tenantToken}` 
+          }
+        })
 
-        if (!error) {
-          this.deleteConfirmExpense = null
-          this.closeModal()
-          this.loadExpenses()
-        }
+        this.deleteConfirmExpense = null
+        this.closeModal()
       } catch (err) {
         console.error('Error deleting expense:', err)
         this.deleteConfirmExpense = null
@@ -551,9 +728,9 @@ export default {
       }
     },
 
-    handleQuickPersonSave(person) {
+    async handleQuickPersonSave(person) {
       this.form.customer_id = person.id
-      this.loadProviders(useApi().getPeople)
+      await this.loadProviders()
       this.closeQuickPersonModal()
     },
 

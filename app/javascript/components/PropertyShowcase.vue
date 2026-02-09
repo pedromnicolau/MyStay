@@ -307,34 +307,8 @@ export default {
               'Tenant-Authorization': `Bearer ${tenantToken}`
             }
           })
-          data = response.data
-          
-          data = data.map(property => ({
-            id: property.id,
-            name: property.name,
-            city: property.city,
-            neighborhood: property.neighborhood,
-            bedrooms: property.bedrooms,
-            bathrooms: property.bathrooms,
-            max_guests: property.max_guests,
-            images: property.attachments ? property.attachments.map(att => att.url) : [],
-            main_image: property.attachments?.[0]?.url,
-            tenant_id: property.tenant_id,
-            description_short: property.description?.substring(0, 100),
-            amenities: {
-              air_conditioning: property.air_conditioning,
-              wifi: property.wifi,
-              tv: property.tv,
-              kitchen: property.kitchen,
-              parking_included: property.parking_included,
-              washing_machine: property.washing_machine,
-              pool: property.pool,
-              barbecue_grill: property.barbecue_grill,
-              balcony: property.balcony,
-              pet_friendly: property.pet_friendly,
-              wheelchair_accessible: property.wheelchair_accessible
-            }
-          }))
+          // Backend now returns { data: [...], pagy: {...} }
+          data = response.data.data || []
         } else {
           const url = this.tenantCode 
             ? `/api/v1/properties/public/showcase?tenant_code=${this.tenantCode}`

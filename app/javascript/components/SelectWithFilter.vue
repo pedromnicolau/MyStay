@@ -57,7 +57,10 @@ export default {
       if (this.isOpen) {
         return this.filterText
       }
-      const selected = this.options.find(opt => opt.value === this.modelValue)
+      if (!Array.isArray(this.options)) {
+        return ''
+      }
+      const selected = this.options.find(opt => String(opt.value) === String(this.modelValue))
       return selected ? selected.label : ''
     },
 

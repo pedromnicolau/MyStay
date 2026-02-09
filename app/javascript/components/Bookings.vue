@@ -274,11 +274,11 @@
           <div v-if="entryType === 'cleaning'" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <PersonSelect
+                <PersonSelectAsync
                   v-model="form.customer_id"
-                  :options="cleanerOptions"
                   :selected-person="selectedCleaner"
                   label="Prestador *"
+                  role="provider"
                   @update:modelValue="handleCleanerChange"
                 />
               </div>
@@ -396,11 +396,11 @@
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <PersonSelect
+              <PersonSelectAsync
                 v-model="form.customer_id"
-                :options="customerOptions"
                 :selected-person="selectedCustomer"
                 label="Hóspede *"
+                role="customer"
                 @update:modelValue="handleCustomerChange"
               />
             </div>
@@ -546,11 +546,11 @@
             </div>
 
             <div>
-              <PersonSelect
+              <PersonSelectAsync
                 v-model="form.seller_id"
-                :options="sellerOptions"
                 :selected-person="selectedSeller"
                 label="Corretor"
+                role="agent"
                 @update:modelValue="handleSellerChange"
               />
             </div>
@@ -693,6 +693,7 @@ import QuickServiceTypeModal from './QuickServiceTypeModal.vue'
 import ConfirmationModal from './ConfirmationModal.vue'
 import SelectWithFilter from './SelectWithFilter.vue'
 import PersonSelect from './PersonSelect.vue'
+import PersonSelectAsync from './PersonSelectAsync.vue'
 import ServiceTypeSelect from './ServiceTypeSelect.vue'
 import AttachmentManager from './AttachmentManager.vue'
 import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
@@ -706,6 +707,7 @@ export default {
     ConfirmationModal,
     SelectWithFilter,
     PersonSelect,
+    PersonSelectAsync,
     ServiceTypeSelect,
     AttachmentManager
   },
@@ -724,10 +726,7 @@ export default {
       editingBooking: null,
       entryType: 'booking',
       selectedPropertyId: null,
-      customers: [],
       properties: [],
-      sellers: [],
-      cleaners: [],
       serviceTypes: [],
       saving: false,
       deleteConfirmBooking: null,
@@ -787,61 +786,25 @@ export default {
       })
     },
 
-    activeCustomers() {
-      return this.customers.filter(c => !c.blocked)
-    },
-
-    activeCleaners() {
-      return this.cleaners.filter(c => !c.blocked)
-    },
-
-    activeSellers() {
-      return this.sellers.filter(s => !s.blocked)
-    },
-
-    customerOptions() {
-      return [
-        { value: 'new', label: '+ Novo Hóspede' },
-        ...this.activeCustomers.map(c => ({ value: String(c.id), label: c.name }))
-      ]
-    },
-
-    cleanerOptions() {
-      return [
-        { value: 'new', label: '+ Novo Prestador' },
-        ...this.activeCleaners.map(c => ({ value: String(c.id), label: c.name }))
-      ]
-    },
-
-    sellerOptions() {
-      return [
-        { value: 'new', label: '+ Novo Corretor' },
-        ...this.activeSellers.map(s => ({ value: String(s.id), label: s.name }))
-      ]
-    },
-
     selectedCustomer() {
-      const id = String(this.form.customer_id || '')
-      if (!id) return null
-      return this.customers.find(c => String(c.id) === id) || null
+      if (!this.editingBooking || !this.editingBooking.customer) return null
+      return this.editingBooking.customer
     },
 
     selectedCleaner() {
-      const id = String(this.form.customer_id || '')
-      if (!id) return null
-      return this.cleaners.find(c => String(c.id) === id) || null
+      if (!this.editingBooking || !this.editingBooking.customer) return null
+      return this.editingBooking.customer
     },
 
     selectedSeller() {
-      const id = String(this.form.seller_id || '')
-      if (!id) return null
-      return this.sellers.find(s => String(s.id) === id) || null
+      if (!this.editingBooking || !this.editingBooking.seller) return null
+      return this.editingBooking.seller
     },
 
     serviceTypeOptions() {
       return [
         { value: 'new', label: '+ Novo Tipo de Serviço' },
-        ...this.serviceTypes.map(st => ({ value: String(st.id), label: st.name }))
+        ...(Array.isArray(this.serviceTypes) ? this.serviceTypes.map(st => ({ value: String(st.id), label: st.name })) : [])
       ]
     }
   },
@@ -931,13 +894,10 @@ export default {
     async loadData() {
       this.loading = true
       try {
-        const { getPeople, getProperties, getServiceTypes } = useApi()
+        const { getProperties, getServiceTypes } = useApi()
         await Promise.all([
           this.loadServicesByMonth(),
-          this.loadCustomers(getPeople),
           this.loadProperties(getProperties),
-          this.loadSellers(getPeople),
-          this.loadCleaners(getPeople),
           this.loadServiceTypes(getServiceTypes)
         ])
       } finally {
@@ -970,15 +930,6 @@ export default {
       }
     },
 
-    async loadCustomers(apiMethod) {
-      try {
-        const { data, error } = await apiMethod('customer')
-        if (!error) this.customers = data
-      } catch (err) {
-        console.error('Error loading customers:', err)
-      }
-    },
-
     async loadProperties(apiMethod) {
       try {
         const { data, error } = await apiMethod()
@@ -991,24 +942,6 @@ export default {
         }
       } catch (err) {
         console.error('Error loading properties:', err)
-      }
-    },
-
-    async loadSellers(apiMethod) {
-      try {
-        const { data, error } = await apiMethod('agent')
-        if (!error) this.sellers = data
-      } catch (err) {
-        console.error('Error loading sellers:', err)
-      }
-    },
-
-    async loadCleaners(apiMethod) {
-      try {
-        const { data, error } = await apiMethod('provider')
-        if (!error) this.cleaners = data
-      } catch (err) {
-        console.error('Error loading cleaners:', err)
       }
     },
 
@@ -1451,15 +1384,13 @@ export default {
     },
 
     handleQuickPersonSave(person) {
+      // Apenas atualizar o ID do formulário, o PersonSelectAsync vai lidar com a atualização
       if (this.quickPersonModalOpen.type === 'Customer') {
-        this.form.customer_id = person.id
-        this.loadCustomers(useApi().getPeople)
+        this.form.customer_id = String(person.id)
       } else if (this.quickPersonModalOpen.type === 'Cleaner') {
-        this.form.customer_id = person.id
-        this.loadCleaners(useApi().getPeople)
+        this.form.customer_id = String(person.id)
       } else if (this.quickPersonModalOpen.type === 'Seller') {
-        this.form.seller_id = person.id
-        this.loadSellers(useApi().getPeople)
+        this.form.seller_id = String(person.id)
       }
       this.closeQuickPersonModal()
     },
@@ -1476,7 +1407,7 @@ export default {
     },
 
     handleQuickServiceTypeSave(serviceType) {
-      this.form.service_type_id = serviceType.id
+      this.form.service_type_id = String(serviceType.id)
       this.loadServiceTypes(useApi().getServiceTypes)
     },
 

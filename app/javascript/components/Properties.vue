@@ -765,7 +765,8 @@ export default {
             'Tenant-Authorization': `Bearer ${tenantToken}` 
           }
         })
-        this.users = response.data || []
+        // Backend returns { data: [...], pagy: {...} }
+        this.users = response.data.data || []
       } catch (error) {
         console.error('Erro ao carregar usuários:', error)
         this.users = []

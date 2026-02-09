@@ -2,8 +2,7 @@ module Api
   module V1
     class StaysController < MovementsController
       def index
-        movements = Movement.where(tenant_id: current_tenant.id)
-          .with_attached_attachments
+        movements = Movement.where(tenant_id: current_tenant.id).includes(:customer, :property, :seller, :service_type)
           .order(check_in_date: :desc)
 
         movements = movements.where(property_id: params[:property_id]) if params[:property_id].present?
@@ -20,10 +19,26 @@ module Api
           movements = movements.where("check_out_date <= ?", end_date)
         end
 
-        render json: movements.map { |movement| serialize_movement(movement) }, status: :ok
+        render json: movements.map { |movement| serialize_analysis_movement(movement) }, status: :ok
       end
 
       private
+
+      def serialize_analysis_movement(movement)
+        {
+          id: movement.id,
+          type: movement.type,
+          check_in_date: movement.check_in_date,
+          check_out_date: movement.check_out_date,
+          guest_name: movement.customer&.name,
+          property_name: movement.property&.name,
+          total_due: movement.total_due,
+          deposit_amount: movement.deposit_amount,
+          final_amount: movement.final_amount,
+          total_payable: movement.total_payable,
+          total_paid: movement.total_paid
+        }
+      end
 
       def movement_class
         Stay

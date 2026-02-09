@@ -23,10 +23,11 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data Início *</label>
             <input
               v-model="filters.startDate"
               type="date"
+              required
               @change="loadBookings"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -267,6 +268,10 @@ import { useApi } from '../composables/useApi.js'
 
 export default {
   data() {
+    const today = new Date()
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    const startDate = firstDayOfMonth.toISOString().split('T')[0]
+    
     return {
       bookings: [],
       properties: [],
@@ -274,7 +279,7 @@ export default {
       filterType: 'all',
       filters: {
         propertyId: '',
-        startDate: '',
+        startDate: startDate,
         endDate: ''
       }
     }
@@ -339,6 +344,10 @@ export default {
 
   methods: {
     async loadBookings() {
+      if (!this.filters.startDate) {
+        return
+      }
+      
       this.loading = true
       try {
         const { get } = useApi()
