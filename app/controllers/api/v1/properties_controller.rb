@@ -53,7 +53,7 @@ class Api::V1::PropertiesController < ApplicationController
 
   def property_params
     params.require(:property).permit(
-      :name, :description, :address, :number, :neighborhood, :zip, :city, :state, :active,
+      :name, :description, :address, :number, :neighborhood, :zip, :city, :state, :active, :show_on_main_page,
       :user_id,
       :bedrooms, :bathrooms, :max_guests,
       :air_conditioning, :wifi, :tv, :kitchen, :parking_included,

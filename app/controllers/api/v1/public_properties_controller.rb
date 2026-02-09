@@ -2,12 +2,14 @@ class Api::V1::PublicPropertiesController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def showcase
+    # Base query for active properties
     properties = Property.where(active: true)
       .with_attached_attachments
       .order(created_at: :desc)
 
     tenant_info = nil
     if params[:tenant_code].present?
+      # If tenant_code is provided, show all active properties from that tenant
       tenant = Tenant.find_by(master_code: params[:tenant_code])
       if tenant
         properties = properties.where(tenant_id: tenant.id)
@@ -15,6 +17,9 @@ class Api::V1::PublicPropertiesController < ApplicationController
       else
         properties = properties.none
       end
+    else
+      # If no tenant_code, only show properties with show_on_main_page = true
+      properties = properties.where(show_on_main_page: true)
     end
 
     properties = properties.limit(params[:limit] || 50)
@@ -54,6 +59,7 @@ class Api::V1::PublicPropertiesController < ApplicationController
       main_image: images.first,
       tenant_id: property.tenant_id,
       description_short: property.description&.truncate(100),
+      show_on_main_page: property.show_on_main_page,
       amenities: {
         air_conditioning: property.air_conditioning,
         wifi: property.wifi,
@@ -93,6 +99,7 @@ class Api::V1::PublicPropertiesController < ApplicationController
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       max_guests: property.max_guests,
+      show_on_main_page: property.show_on_main_page,
       amenities: {
         air_conditioning: property.air_conditioning,
         wifi: property.wifi,

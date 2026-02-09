@@ -57,18 +57,18 @@
                 </button>
                 <div class="border-t border-gray-100 my-2"></div>
                 <button
+                    @click="navigate('properties')"
+                    class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                  >
+                    <i class="fa-solid fa-house text-gray-500 mr-3"></i>
+                    Imóveis
+                </button>
+                <button
                   @click="navigate('service-types')"
                   class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
                 >
                   <i class="fa-solid fa-list text-gray-500 mr-3"></i>
                   Tipos de Serviço
-                </button>
-                <button
-                  @click="navigate('properties')"
-                  class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                >
-                  <i class="fa-solid fa-house text-gray-500 mr-3"></i>
-                  Imóveis
                 </button>
                 
               </div>

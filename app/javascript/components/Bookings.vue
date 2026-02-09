@@ -1052,7 +1052,7 @@ export default {
         const serviceTypeName = booking.service_type?.name || 'Serviço'
         return serviceTypeName
       }
-      return 'Hospedagem'
+      return `${booking.customer?.name}`
     },
 
     getBookingTooltip(booking) {

@@ -250,6 +250,11 @@
           <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24 border-2 border-indigo-100">
             <h3 class="text-2xl font-bold text-gray-900 mb-6">Interessado?</h3>
             
+            <!-- User Host Name -->
+            <p v-if="property.user && property.user.first_name" class="text-gray-700 font-semibold mb-4">
+              Anfitrião: {{ hostFullName }}
+            </p>
+
             <p class="text-gray-600 mb-6 text-sm">
               Entre em contato conosco para agendar uma visita ou obter mais informações sobre este imóvel.
             </p>
@@ -382,6 +387,13 @@ export default {
     hasAmenities() {
       if (!this.property?.amenities) return false
       return Object.values(this.property.amenities).some(v => v === true)
+    },
+
+    hostFullName() {
+      if (!this.property || !this.property.user) return ''
+      const first = this.property.user.first_name || ''
+      const last = this.property.user.last_name || ''
+      return `${first}${last ? ' ' + last : ''}`
     }
   },
 

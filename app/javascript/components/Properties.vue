@@ -181,7 +181,7 @@
           />
         </div>
 
-        <div class="md:col-span-2">
+        <div>
           <label class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition cursor-pointer group">
             <input
               v-model="form.active"
@@ -191,6 +191,20 @@
             <div class="ml-3">
               <span class="text-sm font-semibold text-gray-700 block">Imóvel ativo</span>
               <span class="text-xs text-gray-500">{{ form.active ? 'Visível para reservas' : 'Oculto do catálogo' }}</span>
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <label class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition cursor-pointer group">
+            <input
+              v-model="form.show_on_main_page"
+              type="checkbox"
+              class="w-5 h-5 text-indigo-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer group-hover:border-indigo-500"
+            />
+            <div class="ml-3">
+              <span class="text-sm font-semibold text-gray-700 block">Exibir na tela principal</span>
+              <span class="text-xs text-gray-500">{{ form.show_on_main_page ? 'Visível para todos' : 'Apenas via código' }}</span>
             </div>
           </label>
         </div>
@@ -634,13 +648,17 @@ export default {
           format: (value, item) => item.state ? `${value} - ${item.state}` : value
         },
         { key: 'state', label: 'Estado' },
-        { key: 'neighborhood', label: 'Bairro' },
         { key: 'bedrooms', label: 'Quartos', format: (v) => v ?? 0 },
         { key: 'bathrooms', label: 'Banheiros', format: (v) => v ?? 0 },
         { 
           key: 'active', 
-          label: 'Status',
-          format: (value) => value ? 'Ativo' : 'Inativo'
+          label: 'Ativo',
+          format: (value) => value ? 'Sim' : 'Não'
+        },
+        { 
+          key: 'show_on_main_page', 
+          label: 'Tela Principal',
+          format: (value) => value ? 'Sim' : 'Não'
         }
       ],
       formFields: {
@@ -673,7 +691,8 @@ export default {
         attachments_order: [],
         remove_attachment_ids: [],
         contract: null,
-        active: true
+        active: true,
+        show_on_main_page: false
       }
     }
   },

@@ -2,7 +2,7 @@ module Api
   module V1
     class StaysController < MovementsController
       def index
-        movements = current_user.movements.where(tenant_id: current_tenant.id, type: "Stay")
+        movements = Movement.where(tenant_id: current_tenant.id)
           .with_attached_attachments
           .order(check_in_date: :desc)
 

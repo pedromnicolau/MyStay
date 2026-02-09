@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_08_190046) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -109,9 +109,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
     t.boolean "agent", default: false, null: false
     t.index ["tenant_id", "city"], name: "index_people_on_tenant_id_and_city"
     t.index ["tenant_id", "document"], name: "index_people_on_tenant_and_cpf", unique: true
-    t.index ["tenant_id", "document"], name: "index_people_on_tenant_id_and_document"
     t.index ["tenant_id", "rg"], name: "index_people_on_tenant_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
-    t.index ["tenant_id", "rg"], name: "index_people_on_tenant_id_and_rg", unique: true, where: "((rg IS NOT NULL) AND ((rg)::text <> ''::text))"
     t.index ["tenant_id", "user_id"], name: "index_people_on_tenant_id_and_user_id"
     t.index ["tenant_id"], name: "index_people_on_tenant_id"
   end
@@ -147,6 +145,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
     t.bigint "tenant_id", null: false
     t.float "latitude"
     t.float "longitude"
+    t.boolean "show_on_main_page", default: false, null: false
     t.index ["tenant_id", "active"], name: "index_properties_on_tenant_id_and_active"
     t.index ["tenant_id", "city"], name: "index_properties_on_tenant_id_and_city"
     t.index ["tenant_id", "name"], name: "index_properties_on_tenant_id_and_name", unique: true
@@ -161,7 +160,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
     t.text "description"
     t.bigint "tenant_id", null: false
     t.index ["tenant_id", "name"], name: "index_service_types_on_tenant_and_name", unique: true
-    t.index ["tenant_id"], name: "index_service_types_on_tenant_id"
   end
 
   create_table "tenants", force: :cascade do |t|
@@ -170,7 +168,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_231050) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["master_code"], name: "index_tenants_on_master_code", unique: true
-    t.index ["name"], name: "index_tenants_on_name"
+    t.index ["name"], name: "index_tenants_on_name", unique: true
   end
 
   create_table "users", force: :cascade do |t|
