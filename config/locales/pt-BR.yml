@@ -35,6 +35,9 @@ pt-BR:
               confirmation: "não confere com a senha"
         person:
           attributes:
+            document:
+              taken: "já está cadastrado"
+              blank: "não pode ficar em branco"
             cpf:
               taken: "já está cadastrado"
             rg:
@@ -49,6 +52,7 @@ pt-BR:
     attributes:
       person:
         name: "Nome"
+        document: "CPF/CNPJ"
         cpf: "CPF"
         rg: "RG"
         phone: "Telefone"

@@ -98,7 +98,9 @@ export default {
       people: [],
       loading: false,
       highlightedIndex: -1,
-      blurTimeout: null
+      blurTimeout: null,
+      searchTimeout: null,
+      shouldMaintainFocus: false
     }
   },
   watch: {
@@ -160,16 +162,10 @@ export default {
         return [newOption]
       }
 
-      let filtered = this.people
+      // Não filtrar localmente - a filtragem é feita no servidor
+      const filtered = this.people
         .filter(p => !p.blocked)
         .map(p => ({ value: String(p.id), label: p.name, data: p }))
-
-      if (this.filterText) {
-        const searchLower = this.filterText.toLowerCase()
-        filtered = filtered.filter(opt => 
-          opt.label.toLowerCase().includes(searchLower)
-        )
-      }
 
       return [newOption, ...filtered]
     }
@@ -183,13 +179,13 @@ export default {
       }
       return labels[this.role] || '+ Novo'
     },
-    async loadPeople() {
+    async loadPeople(searchTerm = null) {
       if (this.loading) return
       
       this.loading = true
       try {
         const { getPeople } = useApi()
-        const { data, error } = await getPeople(this.role)
+        const { data, error } = await getPeople(this.role, searchTerm)
         
         if (!error && data) {
           // Se data tem uma propriedade data (paginada), usar ela
@@ -199,14 +195,23 @@ export default {
         console.error('Error loading people:', err)
       } finally {
         this.loading = false
+        
+        // Restaurar foco se necessário
+        if (this.shouldMaintainFocus && this.$refs.inputRef) {
+          this.$nextTick(() => {
+            this.$refs.inputRef.focus()
+            this.shouldMaintainFocus = false
+          })
+        }
       }
     },
     
     handleMouseDown(event) {
-      // Prevenir o blur quando clicar no input
-      if (this.isOpen) {
-        event.preventDefault()
-        return
+      // Abrir dropdown ao clicar se ainda não estiver aberto
+      if (!this.isOpen) {
+        this.isOpen = true
+        this.highlightedIndex = -1
+        this.loadPeople()
       }
     },
     
@@ -229,6 +234,18 @@ export default {
       this.filterText = event.target.value
       this.isOpen = true
       this.highlightedIndex = -1
+      this.shouldMaintainFocus = true
+      
+      // Limpar timeout anterior
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout)
+      }
+      
+      // Buscar no servidor após 300ms de inatividade
+      this.searchTimeout = setTimeout(() => {
+        const searchTerm = this.filterText.trim()
+        this.loadPeople(searchTerm || null)
+      }, 300)
     },
     
     selectOption(value) {
@@ -302,9 +319,12 @@ export default {
   },
   
   beforeUnmount() {
-    // Limpar timeout ao destruir componente
+    // Limpar timeouts ao destruir componente
     if (this.blurTimeout) {
       clearTimeout(this.blurTimeout)
+    }
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout)
     }
     // Remover listener de clique
     document.removeEventListener('click', this.handleClickOutside)

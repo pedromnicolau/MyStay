@@ -8,6 +8,8 @@ module Api
       def index
         service_types = ServiceType.where(tenant_id: current_tenant.id).order(created_at: :desc)
 
+        service_types = service_types.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+
         pagy, records = pagy(service_types, items: 20)
         records = records.select(:id, :name, :description)
 

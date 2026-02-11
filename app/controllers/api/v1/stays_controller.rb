@@ -36,7 +36,9 @@ module Api
           deposit_amount: movement.deposit_amount,
           final_amount: movement.final_amount,
           total_payable: movement.total_payable,
-          total_paid: movement.total_paid
+          total_paid: movement.total_paid,
+          guest_note: movement.guest_note,
+          seller_note: movement.seller_note
         }
       end
 
@@ -49,7 +51,7 @@ module Api
                                       :number_of_guests, :price_per_night,
                                       :total_price, :currency, :description, :address,
                                       :customer_id, :property_id,
-                                      :seller_id, :total_due, :deposit_amount, :final_amount, :balance_due,
+                                      :seller_id, :service_type_id, :total_due, :deposit_amount, :final_amount, :balance_due,
                                       :guest_note, :total_payable, :total_paid, :balance_payable, :seller_note,
                                       attachments: [], remove_attachment_ids: [], attachments_order: [])
       end

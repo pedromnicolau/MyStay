@@ -7,7 +7,11 @@ module Api
       before_action :set_movement_with_associations, only: [ :contract ]
 
       def index
-        movements = current_user.movements.where.not(type: "Expense").includes(:customer, :property, :seller, :service_type).order(created_at: :desc)
+        movements = current_user.movements
+          .where.not(type: "Expense")
+          .includes(:customer, :property, :seller, :service_type)
+          .with_attached_attachments
+          .order(created_at: :desc)
 
         if params[:start_date].present? && params[:end_date].present?
           start_date = Date.parse(params[:start_date])
@@ -32,7 +36,7 @@ module Api
         movement = klass.new(movement_payload)
         movement.user = current_user
         if movement.save
-          process_attachments(movement)
+          process_attachments(movement, movement_params)
           render json: serialize_movement(movement), status: :created
         else
           render json: { errors: movement.errors.full_messages }, status: :unprocessable_entity
@@ -41,7 +45,7 @@ module Api
 
       def update
         if @movement.update(movement_payload)
-          process_attachments(@movement)
+          process_attachments(@movement, movement_params)
           render json: serialize_movement(@movement), status: :ok
         else
           render json: { errors: @movement.errors.full_messages }, status: :unprocessable_entity
@@ -54,17 +58,41 @@ module Api
       end
 
       def contract
-        generator = ContractGenerator.new(@movement)
-        file = generator.generate
+        file = nil
 
-        data = File.binread(file.path)
-        send_data data,
-                  filename: "Contrato-#{@movement.customer&.name&.parameterize || 'movimento'}.docx",
-                  type: generator.content_type,
-                  disposition: "attachment"
+        # Verificar se deve usar o template do imóvel ou o gerador padrão
+        if @movement.property&.contract&.attached?
+          # Usar o template personalizado do imóvel
+          processor = ContractTemplateProcessor.new(@movement)
+
+          begin
+            file = processor.process
+
+            data = File.binread(file.path)
+            send_data data,
+                      filename: "Contrato-#{@movement.customer&.name&.parameterize || 'movimento'}.docx",
+                      type: processor.content_type,
+                      disposition: "attachment"
+          rescue ContractTemplateProcessor::MissingDataError => e
+            render json: {
+              error: e.message,
+              missing_fields: e.missing_fields
+            }, status: :unprocessable_entity
+          end
+        else
+          # Fallback para o gerador padrão (mantém compatibilidade)
+          generator = ContractGenerator.new(@movement)
+          file = generator.generate
+
+          data = File.binread(file.path)
+          send_data data,
+                    filename: "Contrato-#{@movement.customer&.name&.parameterize || 'movimento'}.docx",
+                    type: generator.content_type,
+                    disposition: "attachment"
+        end
       ensure
         file&.close!
-        file&.unlink
+        file&.unlink if file&.path
       end
 
       private
@@ -86,14 +114,14 @@ module Api
         permitted
       end
 
-      def process_attachments(movement)
-        attach_files(movement)
-        purge_removed_attachments(movement)
-        save_attachments_order(movement)
+      def process_attachments(movement, params_hash)
+        attach_files(movement, params_hash)
+        purge_removed_attachments(movement, params_hash)
+        save_attachments_order(movement, params_hash)
       end
 
-      def attach_files(movement)
-        new_files = params.dig(:movement, :attachments)
+      def attach_files(movement, params_hash)
+        new_files = params_hash[:attachments]
         return if new_files.blank?
 
         # Filter out objects with previewUrl (already existing attachments)
@@ -105,8 +133,8 @@ module Api
         movement.attachments.attach(files_to_attach) if files_to_attach.any?
       end
 
-      def purge_removed_attachments(movement)
-        ids = params.dig(:movement, :remove_attachment_ids)
+      def purge_removed_attachments(movement, params_hash)
+        ids = params_hash[:remove_attachment_ids]
         return if ids.blank?
 
         Array(ids).each do |attachment_id|
@@ -115,8 +143,8 @@ module Api
         end
       end
 
-      def save_attachments_order(movement)
-        order = params.dig(:movement, :attachments_order)
+      def save_attachments_order(movement, params_hash)
+        order = params_hash[:attachments_order]
         return if order.blank?
 
         valid_ids = movement.attachments.pluck(:id)
@@ -142,7 +170,7 @@ module Api
       end
 
       def serialize_movement_summary(movement)
-        {
+        serialized = {
           id: movement.id,
           type: movement.type,
           check_in_date: movement.check_in_date,
@@ -153,10 +181,20 @@ module Api
           property: movement.property ? { id: movement.property.id, name: movement.property.name } : nil,
           seller: movement.seller ? { id: movement.seller.id, name: movement.seller.name } : nil,
           service_type: movement.service_type ? { id: movement.service_type.id, name: movement.service_type.name } : nil,
+          number_of_guests: movement.number_of_guests,
           total_price: movement.total_price,
           total_due: movement.total_due,
-          total_payable: movement.total_payable
+          deposit_amount: movement.deposit_amount,
+          final_amount: movement.final_amount,
+          total_payable: movement.total_payable,
+          total_paid: movement.total_paid,
+          guest_note: movement.guest_note,
+          seller_note: movement.seller_note,
+          description: movement.description,
+          attachments: attachments_payload(movement)
         }
+        serialized[:attachments_order] = movement.attachments_order || [] if movement.respond_to?(:attachments_order)
+        serialized
       end
 
       def attachments_payload(movement)

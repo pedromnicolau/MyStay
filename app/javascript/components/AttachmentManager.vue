@@ -257,7 +257,7 @@ export default {
       default: 'Clique ou arraste arquivos para adicionar anexos'
     }
   },
-  emits: ['update:modelValue', 'update:removeAttachmentIds'],
+  emits: ['update:modelValue', 'update:removeAttachmentIds', 'update:attachmentsOrder'],
   data() {
     return {
       dragState: {
@@ -359,6 +359,14 @@ export default {
       this.$emit('update:modelValue', newAttachments)
     },
 
+    emitAttachmentsOrder(allAttachments) {
+      // Extrair apenas os IDs dos anexos existentes (que têm ID) na ordem atual
+      const order = allAttachments
+        .filter(item => item.id)
+        .map(item => item.id)
+      this.$emit('update:attachmentsOrder', order)
+    },
+
     startDrag(event, type, index) {
       if (!this.enableReorder) return
       this.dragState.from = type
@@ -420,6 +428,7 @@ export default {
       allAttachments[toRealIdx] = temp
 
       this.$emit('update:modelValue', allAttachments)
+      this.emitAttachmentsOrder(allAttachments)
     },
 
     dragOverZone(event, type, index, position) {
@@ -473,6 +482,7 @@ export default {
       allAttachments.splice(insertIdx, 0, removed)
 
       this.$emit('update:modelValue', allAttachments)
+      this.emitAttachmentsOrder(allAttachments)
     },
 
     endDrag() {

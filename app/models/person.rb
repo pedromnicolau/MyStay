@@ -50,13 +50,11 @@ class Person < ApplicationRecord
       validate_cpf_format(cleaned)
     elsif cleaned.length == 14
       validate_cnpj_format(cleaned)
-    else
-      errors.add(:document, "deve ser um CPF ou CNPJ válido")
     end
   end
 
   def validate_cpf_format(cpf)
-    return errors.add(:document, "inválido") if cpf.chars.uniq.length == 1
+    return errors.add(:document, :invalid) if cpf.chars.uniq.length == 1
 
     digits = cpf.chars.map(&:to_i)
     sum1 = (0..8).sum { |i| digits[i] * (10 - i) }
@@ -66,12 +64,12 @@ class Person < ApplicationRecord
     digit2 = sum2 % 11 < 2 ? 0 : 11 - (sum2 % 11)
 
     unless digits[9] == digit1 && digits[10] == digit2
-      errors.add(:document, "inválido")
+      errors.add(:document, :invalid)
     end
   end
 
   def validate_cnpj_format(cnpj)
-    return errors.add(:document, "inválido") if cnpj.chars.uniq.length == 1
+    return errors.add(:document, :invalid) if cnpj.chars.uniq.length == 1
 
     digits = cnpj.chars.map(&:to_i)
     weights1 = [ 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 ]
@@ -83,7 +81,7 @@ class Person < ApplicationRecord
     digit2 = sum2 % 11 < 2 ? 0 : 11 - (sum2 % 11)
 
     unless digits[12] == digit1 && digits[13] == digit2
-      errors.add(:document, "inválido")
+      errors.add(:document, :invalid)
     end
   end
 end

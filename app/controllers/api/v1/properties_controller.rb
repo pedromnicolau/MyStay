@@ -9,6 +9,8 @@ class Api::V1::PropertiesController < ApplicationController
       .includes(:user)
       .order(created_at: :desc)
 
+    properties = properties.where("name ILIKE ?", "%#{params[:name]}%") if params[:name].present?
+
     pagy, records = pagy(properties, items: 20)
 
     render json: {

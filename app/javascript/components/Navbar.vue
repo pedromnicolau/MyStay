@@ -5,7 +5,7 @@
         <!-- Logo e marca à esquerda -->
         <button @click="navigate('dashboard')" class="flex items-center group cursor-pointer">
           <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg flex items-center justify-center text-white font-bold text-lg mr-3 group-hover:shadow-md transition-shadow">
-            M
+            T
           </div>
           <span class="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">TripDay</span>
         </button>

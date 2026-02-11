@@ -127,7 +127,7 @@ export function useApi() {
   }
 
   // Convenience methods for common endpoints
-  const getPeople = async (role = null) => {
+  const getPeople = async (role = null, searchTerm = null) => {
     const roleMap = {
       Customer: 'customer',
       Seller: 'agent',
@@ -135,7 +135,13 @@ export function useApi() {
       Provider: 'provider'
     }
     const normalizedRole = role ? (roleMap[role] || String(role).toLowerCase()) : null
-    const url = normalizedRole ? `/api/v1/people?role=${normalizedRole}` : '/api/v1/people'
+    
+    const params = new URLSearchParams()
+    if (normalizedRole) params.append('role', normalizedRole)
+    if (searchTerm) params.append('name', searchTerm)
+    
+    const queryString = params.toString()
+    const url = queryString ? `/api/v1/people?${queryString}` : '/api/v1/people'
     return get(url)
   }
 
@@ -150,12 +156,14 @@ export function useApi() {
     return get('/api/v1/movements')
   }
 
-  const getServiceTypes = async () => {
-    return get('/api/v1/service_types')
+  const getServiceTypes = async (searchTerm = null) => {
+    const url = searchTerm ? `/api/v1/service_types?name=${encodeURIComponent(searchTerm)}` : '/api/v1/service_types'
+    return get(url)
   }
 
-  const getProperties = async () => {
-    return get('/api/v1/properties')
+  const getProperties = async (searchTerm = null) => {
+    const url = searchTerm ? `/api/v1/properties?name=${encodeURIComponent(searchTerm)}` : '/api/v1/properties'
+    return get(url)
   }
 
   const savePerson = async (person) => {

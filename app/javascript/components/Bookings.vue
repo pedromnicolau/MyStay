@@ -64,16 +64,13 @@
 
       <!-- Calendário e filtros: Quando há imóveis -->
       <div v-else class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Imóvel</label>
-          <select
-            v-model.number="selectedPropertyId"
-            class="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option v-for="property in properties" :key="property.id" :value="property.id">
-              {{ property.name }}
-            </option>
-          </select>
+        <div class="mb-4 w-full md:w-80">
+          <PropertySelectAsync
+            v-model="selectedPropertyId"
+            label="Filtrar por Imóvel"
+            placeholder="Selecione um imóvel para filtrar..."
+            :required="true"
+          />
         </div>
 
         <div class="flex items-center justify-between mb-4">
@@ -108,48 +105,58 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-7 gap-2">
-          <div
-            v-for="day in weekDays"
-            :key="day"
-            class="text-center text-sm font-semibold text-gray-600 py-2"
-          >
-            {{ day }}
+        <div class="relative">
+          <!-- Overlay de loading no calendário -->
+          <div v-if="loading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+            <div class="flex flex-col items-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+              <p class="text-sm text-gray-600">Atualizando calendário...</p>
+            </div>
           </div>
 
-          <div
-            v-for="(day, index) in calendarDays"
-            :key="index"
-            :class="[
-              'min-h-24 p-2 border border-gray-200 rounded-lg',
-              day.isCurrentMonth ? 'bg-white' : 'bg-gray-50',
-              day.isToday ? 'ring-2 ring-indigo-500' : ''
-            ]"
-          >
-            <div class="flex justify-between items-start mb-1">
-              <span
-                :class="[
-                  'text-sm font-medium',
-                  day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400',
-                  day.isToday ? 'bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs' : ''
-                ]"
-              >
-                {{ day.date.getDate() }}
-              </span>
+          <div class="grid grid-cols-7 gap-2">
+            <div
+              v-for="day in weekDays"
+              :key="day"
+              class="text-center text-sm font-semibold text-gray-600 py-2"
+            >
+              {{ day }}
             </div>
 
-            <div class="space-y-1">
-              <div
-                v-for="booking in getBookingsForDay(day.date)"
-                :key="booking.id"
-                @click="viewBooking(booking)"
-                :class="[
-                  'text-xs p-1 rounded cursor-pointer truncate',
-                  getBookingColor(booking)
-                ]"
-                :title="getBookingTooltip(booking)"
-              >
-                {{ getBookingLabel(booking) }}
+            <div
+              v-for="(day, index) in calendarDays"
+              :key="index"
+              :class="[
+                'min-h-24 p-2 border border-gray-200 rounded-lg',
+                day.isCurrentMonth ? 'bg-white' : 'bg-gray-50',
+                day.isToday ? 'ring-2 ring-indigo-500' : ''
+              ]"
+            >
+              <div class="flex justify-between items-start mb-1">
+                <span
+                  :class="[
+                    'text-sm font-medium',
+                    day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400',
+                    day.isToday ? 'bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs' : ''
+                  ]"
+                >
+                  {{ day.date.getDate() }}
+                </span>
+              </div>
+
+              <div class="space-y-1">
+                <div
+                  v-for="booking in getBookingsForDay(day.date)"
+                  :key="booking.id"
+                  @click="viewBooking(booking)"
+                  :class="[
+                    'text-xs p-1 rounded cursor-pointer truncate',
+                    getBookingColor(booking)
+                  ]"
+                  :title="getBookingTooltip(booking)"
+                >
+                  {{ getBookingLabel(booking) }}
+                </div>
               </div>
             </div>
           </div>
@@ -159,8 +166,9 @@
       <div class="bg-white rounded-lg shadow-sm p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Hospedagens do Mês</h3>
         
-        <div v-if="loading" class="flex justify-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div v-if="loading" class="flex flex-col items-center justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3"></div>
+          <p class="text-sm text-gray-600">Carregando hospedagens...</p>
         </div>
 
         <div v-else-if="bookings.length === 0" class="text-center py-8 text-gray-500">
@@ -281,13 +289,23 @@
                   role="provider"
                   @update:modelValue="handleCleanerChange"
                 />
+              </div>              
+
+              <div class="grid-cols-1 md:grid-cols-2 gap-4">
+                <PropertySelectAsync
+                  v-model="form.property_id"
+                  :selected-property="selectedFormProperty"
+                  label="Imóvel *"
+                  placeholder="Selecione um imóvel..."
+                />
               </div>
 
-              <div>
-                <ServiceTypeSelect
+              <div class="md:col-span-2">
+                <ServiceTypeSelectAsync
                   v-model="form.service_type_id"
-                  :options="serviceTypeOptions"
+                  :selected-service-type="selectedFormServiceType"
                   label="Tipo de Serviço *"
+                  placeholder="Selecione um tipo de serviço..."
                   @update:modelValue="handleServiceTypeChange"
                 />
               </div>
@@ -364,10 +382,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Valor Total a Pagar (R$)</label>
               <input
-                v-model.number="form.total_payable"
-                type="number"
-                step="0.01"
-                min="0"
+                v-model="form.total_payable"
+                type="text"
+                @input="e => handleCurrencyInput(e, 'total_payable')"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -387,6 +404,7 @@
               <AttachmentManager
                 v-model="form.attachments"
                 v-model:remove-attachment-ids="form.remove_attachment_ids"
+                v-model:attachments-order="form.attachments_order"
                 :accepted-types="'*'"
                 :enable-reorder="true"
                 :enable-lightbox="true"
@@ -406,17 +424,12 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Imóvel *</label>
-              <select
-                v-model.number="form.property_id"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="" disabled>Selecione um imóvel</option>
-                <option v-for="property in properties" :key="property.id" :value="property.id">
-                  {{ property.name }}
-                </option>
-              </select>
+              <PropertySelectAsync
+                v-model="form.property_id"
+                :selected-property="selectedFormProperty"
+                label="Imóvel *"
+                placeholder="Selecione um imóvel..."
+              />
             </div>
 
             <div>
@@ -601,6 +614,7 @@
               <AttachmentManager
                 v-model="form.attachments"
                 v-model:remove-attachment-ids="form.remove_attachment_ids"
+                v-model:attachments-order="form.attachments_order"
                 :accepted-types="'*'"
                 :enable-reorder="true"
                 :enable-lightbox="true"
@@ -694,7 +708,9 @@ import ConfirmationModal from './ConfirmationModal.vue'
 import SelectWithFilter from './SelectWithFilter.vue'
 import PersonSelect from './PersonSelect.vue'
 import PersonSelectAsync from './PersonSelectAsync.vue'
+import PropertySelectAsync from './PropertySelectAsync.vue'
 import ServiceTypeSelect from './ServiceTypeSelect.vue'
+import ServiceTypeSelectAsync from './ServiceTypeSelectAsync.vue'
 import AttachmentManager from './AttachmentManager.vue'
 import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
 import { useApi } from '../composables/useApi.js'
@@ -708,7 +724,9 @@ export default {
     SelectWithFilter,
     PersonSelect,
     PersonSelectAsync,
+    PropertySelectAsync,
     ServiceTypeSelect,
+    ServiceTypeSelectAsync,
     AttachmentManager
   },
   data() {
@@ -744,7 +762,10 @@ export default {
         'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
       ],
-      weekDays: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+      weekDays: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+      // Estados para armazenar os objetos selecionados
+      currentCustomer: null,
+      currentSeller: null
     }
   },
 
@@ -778,8 +799,11 @@ export default {
 
     sortedBookings() {
       let filtered = this.bookings
-      if (this.selectedPropertyId !== null) {
-        filtered = filtered.filter(b => b.property_id === this.selectedPropertyId)
+      if (this.selectedPropertyId !== null && this.selectedPropertyId !== undefined) {
+        filtered = filtered.filter(b => {
+          const bookingPropertyId = b.property?.id || b.property_id
+          return String(bookingPropertyId) === String(this.selectedPropertyId)
+        })
       }
       return [...filtered].sort((a, b) => {
         return new Date(a.check_in_date) - new Date(b.check_in_date)
@@ -787,18 +811,37 @@ export default {
     },
 
     selectedCustomer() {
+      // Priorizar o estado atual (quando selecionado manualmente)
+      if (this.currentCustomer) return this.currentCustomer
+      // Fallback para editingBooking
       if (!this.editingBooking || !this.editingBooking.customer) return null
       return this.editingBooking.customer
     },
 
     selectedCleaner() {
+      // Priorizar o estado atual (quando selecionado manualmente)
+      if (this.currentCustomer) return this.currentCustomer
+      // Fallback para editingBooking
       if (!this.editingBooking || !this.editingBooking.customer) return null
       return this.editingBooking.customer
     },
 
     selectedSeller() {
+      // Priorizar o estado atual (quando selecionado manualmente)
+      if (this.currentSeller) return this.currentSeller
+      // Fallback para editingBooking
       if (!this.editingBooking || !this.editingBooking.seller) return null
       return this.editingBooking.seller
+    },
+
+    selectedFormProperty() {
+      if (!this.editingBooking || !this.editingBooking.property) return null
+      return this.editingBooking.property
+    },
+
+    selectedFormServiceType() {
+      if (!this.editingBooking || !this.editingBooking.service_type) return null
+      return this.editingBooking.service_type
     },
 
     serviceTypeOptions() {
@@ -818,6 +861,13 @@ export default {
           // Limpar o parâmetro para próximas navegações
           router.params.stayId = null
         }
+      }
+    },
+
+    selectedPropertyId(newVal, oldVal) {
+      // Quando o imóvel selecionado mudar, recarregar os dados
+      if (newVal !== oldVal && oldVal !== undefined) {
+        this.loadServicesByMonth()
       }
     },
 
@@ -873,9 +923,9 @@ export default {
         seller_id: '',
         service_type_id: '',
         check_in_date: '',
-        check_in_time: '',
+        check_in_time: type === 'booking' ? '16:00' : '',
         check_out_date: '',
-        check_out_time: '',
+        check_out_time: type === 'booking' ? '11:00' : '',
         number_of_guests: 1,
         total_due: '0,00',
         deposit_amount: '0,00',
@@ -906,6 +956,8 @@ export default {
     },
 
     async loadServicesByMonth() {
+      this.loading = true
+      
       const startDate = new Date(this.currentYear, this.currentMonth, 1)
       const endDate = new Date(this.currentYear, this.currentMonth + 1, 0)
 
@@ -915,9 +967,13 @@ export default {
       try {
         const { getServices } = useApi()
         const { data, error } = await getServices(startDateString, endDateString)
-        if (!error) this.bookings = data
+        if (!error && data) {
+          this.bookings = data
+        }
       } catch (err) {
         console.error('Error loading bookings by month:', err)
+      } finally {
+        this.loading = false
       }
     },
 
@@ -956,8 +1012,11 @@ export default {
 
     getBookingsForDay(date) {
       let filtered = this.bookings
-      if (this.selectedPropertyId !== null) {
-        filtered = filtered.filter(b => b.property_id === this.selectedPropertyId)
+      if (this.selectedPropertyId !== null && this.selectedPropertyId !== undefined) {
+        filtered = filtered.filter(b => {
+          const bookingPropertyId = b.property?.id || b.property_id
+          return String(bookingPropertyId) === String(this.selectedPropertyId)
+        })
       }
       
       // Normalizar a data do calendário para início do dia (00:00:00)
@@ -1128,6 +1187,9 @@ export default {
         this.form.property_id = this.selectedPropertyId
       }
       this.formErrors = {}
+      // Limpar estados de pessoas selecionadas
+      this.currentCustomer = null
+      this.currentSeller = null
       this.isModalOpen = true
     },
 
@@ -1145,10 +1207,10 @@ export default {
       this.form = {
         ...this.getEmptyForm(type),
         ...booking,
-        customer_id: booking.customer_id ? String(booking.customer_id) : '',
-        property_id: booking.property_id || '',
-        seller_id: booking.seller_id ? String(booking.seller_id) : '',
-        service_type_id: booking.service_type_id ? String(booking.service_type_id) : '',
+        customer_id: booking.customer?.id ? String(booking.customer.id) : (booking.customer_id ? String(booking.customer_id) : ''),
+        property_id: booking.property?.id || booking.property_id || '',
+        seller_id: booking.seller?.id ? String(booking.seller.id) : (booking.seller_id ? String(booking.seller_id) : ''),
+        service_type_id: booking.service_type?.id ? String(booking.service_type.id) : (booking.service_type_id ? String(booking.service_type_id) : ''),
         // Formatar valores monetários para exibição
         total_due: formatMoneyValue(booking.total_due),
         deposit_amount: formatMoneyValue(booking.deposit_amount),
@@ -1173,17 +1235,23 @@ export default {
       this.form = {
         ...this.getEmptyForm(type),
         ...booking,
-        customer_id: booking.customer_id ? String(booking.customer_id) : '',
-        property_id: booking.property_id || '',
-        seller_id: booking.seller_id ? String(booking.seller_id) : '',
-        service_type_id: booking.service_type_id ? String(booking.service_type_id) : '',
+        customer_id: booking.customer?.id ? String(booking.customer.id) : (booking.customer_id ? String(booking.customer_id) : ''),
+        property_id: booking.property?.id || booking.property_id || '',
+        seller_id: booking.seller?.id ? String(booking.seller.id) : (booking.seller_id ? String(booking.seller_id) : ''),
+        service_type_id: booking.service_type?.id ? String(booking.service_type.id) : (booking.service_type_id ? String(booking.service_type_id) : ''),
         // Formatar valores monetários para exibição
         total_due: formatMoneyValue(booking.total_due),
         deposit_amount: formatMoneyValue(booking.deposit_amount),
         final_amount: formatMoneyValue(booking.final_amount),
         total_payable: formatMoneyValue(booking.total_payable),
-        total_paid: formatMoneyValue(booking.total_paid)
+        total_paid: formatMoneyValue(booking.total_paid),
+        // Garantir que anexos e ordem sejam carregados
+        attachments: booking.attachments || [],
+        attachments_order: booking.attachments_order || []
       }
+      // Limpar estados para forçar uso do editingBooking
+      this.currentCustomer = null
+      this.currentSeller = null
       this.formErrors = {}
       this.isModalOpen = true
     },
@@ -1202,6 +1270,9 @@ export default {
       
       this.isModalOpen = false
       this.editingBooking = null
+      // Limpar estados de pessoas selecionadas
+      this.currentCustomer = null
+      this.currentSeller = null
       this.form = this.getEmptyForm()
       this.entryType = 'booking'
       this.formErrors = {}
@@ -1209,15 +1280,6 @@ export default {
 
     buildServiceFormData() {
       const isCleaning = this.entryType === 'cleaning'
-      
-      let selectedPerson
-      if (isCleaning) {
-        selectedPerson = this.cleaners.find(c => String(c.id) === String(this.form.customer_id))
-      } else {
-        selectedPerson = this.customers.find(c => String(c.id) === String(this.form.customer_id))
-      }
-      
-      const selectedProperty = this.properties.find(p => String(p.id) === String(this.form.property_id))
       
       // Verificar se há novos anexos (arquivos File/Blob)
       const isFile = (item) => (typeof File !== 'undefined' && item instanceof File) ||
@@ -1227,12 +1289,19 @@ export default {
       const hasRemovedAttachments = this.form.remove_attachment_ids && this.form.remove_attachment_ids.length > 0
       const hasAttachmentsOrder = this.form.attachments_order && this.form.attachments_order.length > 0
 
+      // Helper para converter IDs para números ou deixar null
+      const parseId = (value) => {
+        if (!value || value === '' || value === 'new') return null
+        const parsed = parseInt(value, 10)
+        return isNaN(parsed) ? null : parsed
+      }
+
       // Dados do serviço/hospedagem
       const serviceData = {
-        customer_id: this.form.customer_id,
-        property_id: this.form.property_id,
-        seller_id: this.form.seller_id || null,
-        service_type_id: this.form.service_type_id || null,
+        customer_id: parseId(this.form.customer_id),
+        property_id: parseId(this.form.property_id),
+        seller_id: parseId(this.form.seller_id),
+        service_type_id: parseId(this.form.service_type_id),
         check_in_date: this.form.check_in_date,
         check_in_time: this.form.check_in_time || null,
         check_out_date: this.form.check_out_date,
@@ -1366,6 +1435,10 @@ export default {
       if (value === 'new') {
         this.quickPersonModalOpen = { isOpen: true, type: 'Customer' }
         this.form.customer_id = ''
+        this.currentCustomer = null
+      } else {
+        // Buscar o objeto completo da pessoa selecionada
+        this.fetchPersonById(value, 'customer')
       }
     },
 
@@ -1373,6 +1446,10 @@ export default {
       if (value === 'new') {
         this.quickPersonModalOpen = { isOpen: true, type: 'Cleaner' }
         this.form.customer_id = ''
+        this.currentCustomer = null
+      } else {
+        // Buscar o objeto completo da pessoa selecionada
+        this.fetchPersonById(value, 'provider')
       }
     },
 
@@ -1380,6 +1457,37 @@ export default {
       if (value === 'new') {
         this.quickPersonModalOpen = { isOpen: true, type: 'Seller' }
         this.form.seller_id = ''
+        this.currentSeller = null
+      } else {
+        // Buscar o objeto completo da pessoa selecionada
+        this.fetchPersonById(value, 'agent')
+      }
+    },
+
+    async fetchPersonById(personId, role) {
+      if (!personId) return
+      
+      try {
+        const userToken = localStorage.getItem('userToken')
+        const tenantToken = localStorage.getItem('tenantToken')
+        
+        const response = await axios.get(`/api/v1/people/${personId}`, {
+          headers: { 
+            Authorization: `Bearer ${userToken}`, 
+            'Tenant-Authorization': `Bearer ${tenantToken}` 
+          }
+        })
+        
+        if (response.data) {
+          // Atualizar o estado correto baseado no role
+          if (role === 'customer' || role === 'provider') {
+            this.currentCustomer = response.data
+          } else if (role === 'agent') {
+            this.currentSeller = response.data
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching person:', err)
       }
     },
 
@@ -1407,8 +1515,13 @@ export default {
     },
 
     handleQuickServiceTypeSave(serviceType) {
-      this.form.service_type_id = String(serviceType.id)
-      this.loadServiceTypes(useApi().getServiceTypes)
+      // Atualizar o ID e forçar recarregamento
+      this.$nextTick(() => {
+        this.form.service_type_id = String(serviceType.id)
+        // Força o recarregamento dos tipos de serviço
+        this.loadServiceTypes(useApi().getServiceTypes)
+      })
+      this.closeQuickServiceTypeModal()
     },
 
     closeQuickServiceTypeModal() {
@@ -1441,6 +1554,8 @@ export default {
       if (!this.editingBooking?.id) return
 
       this.contractDownloading = true
+      this.formErrors = {} // Limpar erros anteriores
+      
       try {
         const { getHeaders } = useApi()
         const isService = this.editingBooking.type === 'Service'
@@ -1451,6 +1566,22 @@ export default {
           responseType: 'blob'
         })
 
+        // Verificar se a resposta é JSON (erro) ou blob (sucesso)
+        if (response.data.type === 'application/json') {
+          // É um erro JSON
+          const text = await response.data.text()
+          const errorData = JSON.parse(text)
+          
+          // Mostrar mensagem de erro formatada
+          if (errorData.missing_fields && errorData.missing_fields.length > 0) {
+            this.formErrors.general = `${errorData.error}`
+          } else {
+            this.formErrors.general = errorData.error || 'Não foi possível exportar o contrato.'
+          }
+          return
+        }
+
+        // Sucesso - fazer download do arquivo
         const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
         const blobUrl = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
@@ -1464,7 +1595,29 @@ export default {
         window.URL.revokeObjectURL(blobUrl)
       } catch (err) {
         console.error('Error exporting contract:', err)
-        this.formErrors.general = 'Não foi possível exportar o contrato agora.'
+        
+        // Tentar extrair mensagem de erro do backend
+        if (err.response && err.response.data) {
+          try {
+            // Se vier como blob, tentar ler como texto
+            if (err.response.data instanceof Blob) {
+              const text = await err.response.data.text()
+              const errorData = JSON.parse(text)
+              
+              if (errorData.missing_fields && errorData.missing_fields.length > 0) {
+                this.formErrors.general = `${errorData.error}`
+              } else {
+                this.formErrors.general = errorData.error || 'Não foi possível exportar o contrato.'
+              }
+            } else {
+              this.formErrors.general = err.response.data.error || 'Não foi possível exportar o contrato.'
+            }
+          } catch (parseError) {
+            this.formErrors.general = 'Não foi possível exportar o contrato. Verifique se todos os dados necessários estão preenchidos.'
+          }
+        } else {
+          this.formErrors.general = 'Não foi possível exportar o contrato agora.'
+        }
       } finally {
         this.contractDownloading = false
       }

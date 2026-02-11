@@ -328,7 +328,38 @@
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Contrato do Imóvel</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Contrato do Imóvel
+            <span class="ml-2 text-xs font-normal text-gray-500">(Opcional - Template .docx)</span>
+          </label>
+          
+          <!-- Mensagem informativa -->
+          <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-start space-x-2">
+              <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="flex-1 text-xs text-blue-800">
+                <p class="font-medium mb-1">Como usar templates de contrato:</p>
+                <ul class="list-disc list-inside space-y-0.5 text-blue-700">
+                  <li>Crie um contrato no Word (.docx) com seu layout personalizado</li>
+                  <li>Use variáveis como <code class="bg-blue-100 px-1 rounded">[CLIENTE_NOME]</code>, <code class="bg-blue-100 px-1 rounded">[CHECK_IN_DATA]</code>, <code class="bg-blue-100 px-1 rounded">[VALOR_TOTAL]</code></li>
+                  <li>Ao exportar contratos de hospedagem, os dados serão automaticamente preenchidos</li>
+                </ul>
+                <p class="mt-2 text-blue-600 font-medium">
+                  📖 Variáveis disponíveis: 
+                  <code class="bg-blue-100 px-1 rounded text-xs">[CLIENTE_NOME]</code> 
+                  <code class="bg-blue-100 px-1 rounded text-xs">[CLIENTE_CPF]</code> 
+                  <code class="bg-blue-100 px-1 rounded text-xs">[CHECK_IN_DATA]</code> 
+                  <code class="bg-blue-100 px-1 rounded text-xs">[CHECK_OUT_DATA]</code> 
+                  <code class="bg-blue-100 px-1 rounded text-xs">[VALOR_TOTAL]</code> 
+                  <code class="bg-blue-100 px-1 rounded text-xs">[IMOVEL_NOME]</code> 
+                  e mais 40+ variáveis...
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="space-y-3">
             <div v-if="form.contract" class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div 

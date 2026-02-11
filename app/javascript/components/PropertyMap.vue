@@ -26,13 +26,6 @@
         </div>
       </div>
     </div>
-    
-    <div v-if="property.address && property.city" class="mt-4 p-4 bg-gray-50 rounded-lg">
-      <p class="text-sm text-gray-700">
-        <i class="fas fa-map-marker-alt text-indigo-600 mr-2"></i>
-        <strong>Endereço:</strong> {{ fullAddress }}
-      </p>
-    </div>
   </div>
 </template>
 
@@ -49,7 +42,6 @@ export default {
 
   data() {
     return {
-      coordinates: null,
       loading: false
     }
   },
@@ -63,81 +55,51 @@ export default {
       if (this.property.neighborhood) parts.push(this.property.neighborhood)
       if (this.property.city) parts.push(this.property.city)
       if (this.property.state) parts.push(this.property.state)
-      if (this.property.zip) parts.push(`CEP: ${this.property.zip}`)
       
       return parts.join(', ')
     },
 
+    // Using Google Maps Embed API (free, no API key required for basic embedding)
     mapUrl() {
-      if (!this.coordinates) return null
+      // Build the address query for Google Maps
+      let query = ''
       
-      const { lat, lon } = this.coordinates
-      const zoom = 15
+      // Prioritize CEP (postal code) as it's the most accurate
+      if (this.property.zip) {
+        const cep = this.property.zip.replace(/\D/g, '')
+        query = cep + ', Brasil'
+      } else {
+        // Fallback to full address
+        query = this.fullAddress + ', Brasil'
+      }
       
-      // OpenStreetMap embed with marker
-      return `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.01},${lat-0.01},${lon+0.01},${lat+0.01}&layer=mapnik&marker=${lat},${lon}`
+      if (!query) return null
+      
+      // Encode the query for URL
+      const encodedQuery = encodeURIComponent(query)
+      
+      // Google Maps Embed URL (basic embed - no API key needed, but has limitations)
+      // For production, get a free API key at: https://developers.google.com/maps/documentation/embed/get-api-key
+      // Then replace 'YOUR_API_KEY' below with your actual key
+      const apiKey = 'YOUR_API_KEY' // Replace with your Google Maps API key
+      
+      if (apiKey && apiKey !== 'YOUR_API_KEY') {
+        // Using Embed API with API key (recommended)
+        return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedQuery}&zoom=15&maptype=roadmap`
+      } else {
+        // Using basic Google Maps iframe embed (free, no API key needed)
+        // This method shows the location without needing an API key
+        return `https://maps.google.com/maps?q=${encodedQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`
+      }
     }
   },
 
   methods: {
-    async fetchCoordinates() {
-      // Try to get coordinates from CEP first
-      if (this.property.zip) {
-        this.loading = true
-        try {
-          const cep = this.property.zip.replace(/\D/g, '')
-          const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
-          const data = await response.json()
-          
-          if (!data.erro) {
-            // ViaCEP doesn't provide coordinates, so we'll use Nominatim
-            const address = `${data.logradouro}, ${data.bairro}, ${data.localidade}, ${data.uf}, Brazil`
-            await this.fetchCoordinatesFromAddress(address)
-            return
-          }
-        } catch (error) {
-          console.error('Error fetching CEP:', error)
-        } finally {
-          this.loading = false
-        }
-      }
-      
-      // Fallback to full address
-      if (this.fullAddress) {
-        await this.fetchCoordinatesFromAddress(this.fullAddress)
-      }
-    },
-
-    async fetchCoordinatesFromAddress(address) {
-      this.loading = true
-      try {
-        const encodedAddress = encodeURIComponent(address)
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
-          {
-            headers: {
-              'User-Agent': 'TripDay Property Viewer'
-            }
-          }
-        )
-        const data = await response.json()
-        
-        if (data.length > 0) {
-          this.coordinates = {
-            lat: parseFloat(data[0].lat),
-            lon: parseFloat(data[0].lon)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching coordinates:', error)
-      } finally {
-        this.loading = false
-      }
-    }
+    // No need for coordinate fetching since Google Maps handles it
   },
 
   mounted() {
-    this.fetchCoordinates()
+    // Google Maps will handle the geocoding
   }
 }
 </script>

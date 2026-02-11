@@ -10,17 +10,13 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Filtros</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Imóvel</label>
-            <select
+            <PropertySelectAsync
               v-model="filters.propertyId"
-              @change="loadBookings"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">Todos os imóveis</option>
-              <option v-for="property in properties" :key="property.id" :value="property.id">
-                {{ property.name }}
-              </option>
-            </select>
+              label="Imóvel"
+              placeholder="Todos os imóveis"
+              @update:modelValue="loadBookings"
+              :required="false"
+            />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Data Início *</label>
@@ -265,8 +261,12 @@
 
 <script>
 import { useApi } from '../composables/useApi.js'
+import PropertySelectAsync from './PropertySelectAsync.vue'
 
 export default {
+  components: {
+    PropertySelectAsync
+  },
   data() {
     const today = new Date()
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
@@ -274,7 +274,6 @@ export default {
     
     return {
       bookings: [],
-      properties: [],
       loading: false,
       filterType: 'all',
       filters: {
@@ -338,7 +337,6 @@ export default {
   },
 
   mounted() {
-    this.loadProperties()
     this.loadBookings()
   },
 
@@ -374,18 +372,6 @@ export default {
         console.error('Error loading bookings:', err)
       } finally {
         this.loading = false
-      }
-    },
-
-    async loadProperties() {
-      try {
-        const { getProperties } = useApi()
-        const { data, error } = await getProperties()
-        if (!error) {
-          this.properties = data
-        }
-      } catch (err) {
-        console.error('Error loading properties:', err)
       }
     },
 

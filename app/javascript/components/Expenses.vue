@@ -215,11 +215,12 @@
             </div>
 
             <div>
-              <PersonSelect
+              <PersonSelectAsync
                 v-model="form.customer_id"
-                :options="providerOptions"
                 :selected-person="selectedProvider"
-                label="Prestador *"
+                label="Prestador"
+                role="provider"
+                placeholder="Selecione ou digite para buscar..."
                 @update:modelValue="handleProviderChange"
               />
             </div>
@@ -252,6 +253,7 @@
               <AttachmentManager
                 v-model="form.attachments"
                 v-model:remove-attachment-ids="form.remove_attachment_ids"
+                v-model:attachments-order="form.attachments_order"
                 :accepted-types="'*'"
                 :enable-reorder="true"
                 :enable-lightbox="true"
@@ -324,7 +326,7 @@
 <script>
 import axios from 'axios'
 import ConfirmationModal from './ConfirmationModal.vue'
-import PersonSelect from './PersonSelect.vue'
+import PersonSelectAsync from './PersonSelectAsync.vue'
 import AttachmentManager from './AttachmentManager.vue'
 import QuickPersonModal from './QuickPersonModal.vue'
 import { useBrazilianMasks } from '../composables/useBrazilianMasks.js'
@@ -333,7 +335,7 @@ import { useApi } from '../composables/useApi.js'
 export default {
   components: {
     ConfirmationModal,
-    PersonSelect,
+    PersonSelectAsync,
     AttachmentManager,
     QuickPersonModal
   },
@@ -345,7 +347,6 @@ export default {
       applyCurrencyMask,
       parseCurrencyToNumber,
       expenses: [],
-      providers: [],
       properties: [],
       loading: false,
       loadingExpenseDetails: false,
@@ -374,17 +375,9 @@ export default {
   },
 
   computed: {
-    providerOptions() {
-      return [
-        { value: 'new', label: '+ Novo Prestador' },
-        ...this.providers.map(p => ({ value: String(p.id), label: p.name }))
-      ]
-    },
-
     selectedProvider() {
-      const id = String(this.form.customer_id || '')
-      if (!id) return null
-      return this.providers.find(p => String(p.id) === id) || null
+      if (!this.editingExpense || !this.editingExpense.customer) return null
+      return this.editingExpense.customer
     },
 
     visiblePages() {
@@ -464,18 +457,6 @@ export default {
       }
     },
 
-    async loadProviders() {
-      try {
-        const { getPeople } = useApi()
-        const { data, error } = await getPeople('provider')
-        if (!error) {
-          this.providers = data.filter(p => !p.blocked)
-        }
-      } catch (err) {
-        console.error('Error loading providers:', err)
-      }
-    },
-
     async loadProperties() {
       try {
         const { getProperties } = useApi()
@@ -528,10 +509,7 @@ export default {
       this.formErrors = {}
       this.isModalOpen = true
       
-      await Promise.all([
-        this.loadProviders(),
-        this.loadProperties()
-      ])
+      await this.loadProperties()
     },
 
     async editExpense(expense) {
@@ -566,10 +544,7 @@ export default {
           attachments_order: response.data.attachments_order || []
         }
         
-        await Promise.all([
-          this.loadProviders(),
-          this.loadProperties()
-        ])
+        await this.loadProperties()
         
         this.isModalOpen = true
       } catch (err) {
@@ -614,6 +589,11 @@ export default {
         description: this.form.description || ''
       }
 
+      // Sempre incluir attachments_order se houver (independente de novos arquivos)
+      if (hasAttachmentsOrder) {
+        expenseData.attachments_order = this.form.attachments_order
+      }
+
       if (!hasNewFiles && !hasRemovedAttachments && !hasAttachmentsOrder) {
         return { useFormData: false, payload: expenseData }
       }
@@ -621,9 +601,6 @@ export default {
       if (!hasNewFiles) {
         if (hasRemovedAttachments) {
           expenseData.remove_attachment_ids = this.form.remove_attachment_ids
-        }
-        if (hasAttachmentsOrder) {
-          expenseData.attachments_order = this.form.attachments_order
         }
         return { useFormData: false, payload: expenseData }
       }
@@ -729,8 +706,7 @@ export default {
     },
 
     async handleQuickPersonSave(person) {
-      this.form.customer_id = person.id
-      await this.loadProviders()
+      this.form.customer_id = String(person.id)
       this.closeQuickPersonModal()
     },
 

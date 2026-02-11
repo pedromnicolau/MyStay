@@ -46,7 +46,8 @@
       <div class="mb-8">
         <div class="grid grid-cols-3 gap-2 mb-4 auto-rows-[250px]">
           <!-- Main large image -->
-          <div class="col-span-2 row-span-2 rounded-xl overflow-hidden bg-gray-300 relative group">
+          <div class="col-span-2 row-span-2 rounded-xl overflow-hidden bg-gray-300 relative group cursor-pointer"
+               @click="openLightbox(currentImageIndex)">
             <img 
               v-if="currentImage"
               :src="currentImage"
@@ -57,8 +58,8 @@
             <!-- Navigation arrows for main image -->
             <button 
               v-if="property.images.length > 1"
-              @click="previousImage"
-              class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 rounded-full p-3 transition-all duration-200 opacity-0 group-hover:opacity-100"
+              @click.stop="previousImage"
+              class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 rounded-full p-3 transition-all duration-200 opacity-0 group-hover:opacity-100 z-10"
               aria-label="Imagem anterior"
             >
               <i class="fas fa-chevron-left text-gray-900 text-lg"></i>
@@ -66,8 +67,8 @@
 
             <button 
               v-if="property.images.length > 1"
-              @click="nextImage"
-              class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 rounded-full p-3 transition-all duration-200 opacity-0 group-hover:opacity-100"
+              @click.stop="nextImage"
+              class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 rounded-full p-3 transition-all duration-200 opacity-0 group-hover:opacity-100 z-10"
               aria-label="Próxima imagem"
             >
               <i class="fas fa-chevron-right text-gray-900 text-lg"></i>
@@ -81,12 +82,12 @@
 
           <!-- Thumbnail images -->
           <div class="col-span-1 row-span-1 rounded-lg overflow-hidden bg-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
-               @click="currentImageIndex = 0">
+               @click="openLightbox(0)">
             <img v-if="property.images[0]" :src="property.images[0]" :alt="`${property.name} - imagem 1`" class="w-full h-full object-cover" />
           </div>
 
           <div v-if="property.images[1]" class="col-span-1 row-span-1 rounded-lg overflow-hidden bg-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
-               @click="currentImageIndex = 1">
+               @click="openLightbox(1)">
             <img :src="property.images[1]" :alt="`${property.name} - imagem 2`" class="w-full h-full object-cover" />
           </div>
 
@@ -329,23 +330,116 @@
     <!-- All Images Modal -->
     <div v-if="showAllImages" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
          @click="showAllImages = false">
-      <button @click="showAllImages = false" class="absolute top-4 right-4 text-white text-2xl font-bold hover:text-gray-300">
+      <button @click="showAllImages = false" class="absolute top-4 right-4 text-white text-2xl font-bold hover:text-gray-300 z-10">
         ✕
       </button>
       
       <div class="max-w-4xl w-full" @click.stop>
+        <h3 class="text-white text-2xl font-bold mb-4 text-center">Todas as Fotos</h3>
         <div class="grid grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
           <img 
             v-for="(image, index) in property.images"
             :key="index"
             :src="image"
             :alt="`${property.name} - imagem ${index + 1}`"
-            class="w-full h-64 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-            @click="currentImageIndex = index; showAllImages = false"
+            class="w-full h-64 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity hover:scale-105 transform duration-200"
+            @click="openLightbox(index); showAllImages = false"
           />
         </div>
       </div>
     </div>
+
+    <!-- Lightbox Modal -->
+    <transition name="lightbox-fade">
+      <div v-if="showLightbox" 
+           class="fixed inset-0 bg-black bg-opacity-95 z-[60] flex items-center justify-center"
+           @click="closeLightbox">
+        
+        <!-- Close Button -->
+        <button 
+          @click="closeLightbox"
+          class="absolute top-4 right-4 z-[70] text-white hover:text-gray-300 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-10"
+          aria-label="Fechar"
+        >
+          <i class="fas fa-times text-3xl"></i>
+        </button>
+
+        <!-- Image Counter -->
+        <div class="absolute top-4 left-1/2 transform -translate-x-1/2 z-[70] bg-black bg-opacity-60 text-white px-6 py-2 rounded-full text-lg font-semibold">
+          {{ lightboxIndex + 1 }} / {{ property.images.length }}
+        </div>
+
+        <!-- Previous Button -->
+        <button 
+          v-if="property.images.length > 1"
+          @click.stop="previousLightboxImage"
+          class="absolute left-4 top-1/2 transform -translate-y-1/2 z-[70] bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-4 transition-all duration-200 backdrop-blur-sm"
+          aria-label="Imagem anterior"
+        >
+          <i class="fas fa-chevron-left text-2xl"></i>
+        </button>
+
+        <!-- Next Button -->
+        <button 
+          v-if="property.images.length > 1"
+          @click.stop="nextLightboxImage"
+          class="absolute right-4 top-1/2 transform -translate-y-1/2 z-[70] bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-4 transition-all duration-200 backdrop-blur-sm"
+          aria-label="Próxima imagem"
+        >
+          <i class="fas fa-chevron-right text-2xl"></i>
+        </button>
+
+        <!-- Main Image -->
+        <div class="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center p-4" @click.stop>
+          <transition name="lightbox-slide" mode="out-in">
+            <img 
+              :key="lightboxIndex"
+              :src="property.images[lightboxIndex]"
+              :alt="`${property.name} - imagem ${lightboxIndex + 1}`"
+              class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              @click.stop
+            />
+          </transition>
+        </div>
+
+        <!-- Thumbnail Strip -->
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-[70] max-w-6xl w-full px-4">
+          <div class="bg-black bg-opacity-60 backdrop-blur-sm rounded-lg p-3">
+            <div class="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+              <div 
+                v-for="(image, index) in property.images"
+                :key="index"
+                @click.stop="lightboxIndex = index"
+                :class="[
+                  'flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 border-2',
+                  index === lightboxIndex 
+                    ? 'border-white scale-105 ring-2 ring-white ring-offset-2 ring-offset-black' 
+                    : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-400'
+                ]"
+              >
+                <img 
+                  :src="image"
+                  :alt="`Thumbnail ${index + 1}`"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Button (Optional) -->
+        <a 
+          :href="property.images[lightboxIndex]"
+          :download="`${property.name}-${lightboxIndex + 1}.jpg`"
+          target="_blank"
+          @click.stop
+          class="absolute top-4 right-20 z-[70] bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-3 transition-all duration-200 backdrop-blur-sm"
+          aria-label="Baixar imagem"
+        >
+          <i class="fas fa-download text-xl"></i>
+        </a>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -375,7 +469,9 @@ export default {
       currentImageIndex: 0,
       isFavorite: false,
       showAllImages: false,
-      showCalendarModal: false
+      showCalendarModal: false,
+      showLightbox: false,
+      lightboxIndex: 0
     }
   },
 
@@ -498,11 +594,104 @@ export default {
       const whatsappUrl = `https://wa.me/${fullPhone}?text=${encodedMessage}`
       
       window.open(whatsappUrl, '_blank')
+    },
+
+    // Lightbox methods
+    openLightbox(index) {
+      this.lightboxIndex = index
+      this.showLightbox = true
+      document.body.style.overflow = 'hidden' // Prevent background scrolling
+    },
+
+    closeLightbox() {
+      this.showLightbox = false
+      document.body.style.overflow = '' // Restore scrolling
+    },
+
+    nextLightboxImage() {
+      if (this.property?.images?.length > 1) {
+        this.lightboxIndex = (this.lightboxIndex + 1) % this.property.images.length
+      }
+    },
+
+    previousLightboxImage() {
+      if (this.property?.images?.length > 1) {
+        this.lightboxIndex = (this.lightboxIndex - 1 + this.property.images.length) % this.property.images.length
+      }
+    },
+
+    handleKeydown(e) {
+      if (!this.showLightbox) return
+      
+      if (e.key === 'Escape') {
+        this.closeLightbox()
+      } else if (e.key === 'ArrowRight') {
+        this.nextLightboxImage()
+      } else if (e.key === 'ArrowLeft') {
+        this.previousLightboxImage()
+      }
     }
   },
 
   mounted() {
     this.loadPropertyDetails()
+    window.addEventListener('keydown', this.handleKeydown)
+  },
+
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleKeydown)
+    document.body.style.overflow = '' // Ensure scrolling is restored
   }
 }
 </script>
+
+<style scoped>
+/* Lightbox Fade Transition */
+.lightbox-fade-enter-active,
+.lightbox-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.lightbox-fade-enter-from,
+.lightbox-fade-leave-to {
+  opacity: 0;
+}
+
+/* Lightbox Slide Transition */
+.lightbox-slide-enter-active,
+.lightbox-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.lightbox-slide-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.lightbox-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+/* Custom Scrollbar for Thumbnail Strip */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+</style>
