@@ -97,7 +97,7 @@ class Api::V1::AuthController < ApplicationController
       neighborhood: user.neighborhood,
       city: user.city,
       state: user.state,
-      profile_image: user.profile_image
+      profile_image: user.profile_image_url
     }
   end
 

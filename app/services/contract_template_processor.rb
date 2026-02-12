@@ -74,7 +74,7 @@ class ContractTemplateProcessor
   end
 
   def download_template
-    temp_file = Tempfile.new([ "contract-template-#{@property.id}", ".docx" ], Rails.root.join("tmp"))
+    temp_file = Tempfile.new([ "contract-template-#{@property.id}", ".docx" ], Rails.root.join("tmp"), binmode: true)
     @property.contract.blob.download do |chunk|
       temp_file.write(chunk)
     end
@@ -83,7 +83,7 @@ class ContractTemplateProcessor
   end
 
   def process_template(template_file)
-    output_file = Tempfile.new([ "contract-output-#{@stay.id}", ".docx" ], Rails.root.join("tmp"))
+    output_file = Tempfile.new([ "contract-output-#{@stay.id}", ".docx" ], Rails.root.join("tmp"), binmode: true)
 
     Zip::File.open(template_file.path) do |zip_in|
       Zip::OutputStream.open(output_file.path) do |zip_out|
@@ -103,21 +103,38 @@ class ContractTemplateProcessor
       end
     end
 
+    output_file.rewind
     output_file
   end
 
   def process_xml_content(xml_content)
     doc = Nokogiri::XML(xml_content)
 
-    # Encontrar todos os textos no documento
-    text_nodes = doc.xpath("//w:t", "w" => "http://schemas.openxmlformats.org/wordprocessingml/2006/main")
+    # Processar parágrafos inteiros para lidar com variáveis fragmentadas
+    paragraphs = doc.xpath("//w:p", "w" => "http://schemas.openxmlformats.org/wordprocessingml/2006/main")
 
-    # Processar cada nó de texto
-    text_nodes.each do |node|
-      text = node.content
-      # Substituir todas as variáveis [NOME_VARIAVEL]
-      new_text = replace_variables(text)
-      node.content = new_text if new_text != text
+    paragraphs.each do |paragraph|
+      # Coletar todos os nós de texto do parágrafo
+      text_nodes = paragraph.xpath(".//w:t", "w" => "http://schemas.openxmlformats.org/wordprocessingml/2006/main")
+      next if text_nodes.empty?
+
+      # Juntar todo o texto do parágrafo
+      full_text = text_nodes.map(&:content).join
+
+      # Se não tem variáveis, pular
+      next unless full_text.include?("[")
+
+      # Substituir variáveis no texto completo
+      new_text = replace_variables(full_text)
+
+      # Se houve substituição, reconstruir os nós
+      if new_text != full_text
+        # Limpar todos os nós de texto existentes
+        text_nodes.each { |node| node.content = "" }
+
+        # Colocar o novo texto no primeiro nó
+        text_nodes.first.content = new_text unless text_nodes.empty?
+      end
     end
 
     doc.to_xml
@@ -166,12 +183,20 @@ class ContractTemplateProcessor
       nights_text
     when "NUMERO_HOSPEDES", "HOSPEDES"
       @stay.number_of_guests&.to_s || "0"
+    when "NUMERO_HOSPEDES_EXTENSO", "HOSPEDES_EXTENSO"
+      number_to_words(@stay.number_of_guests || 0)
     when "VALOR_TOTAL", "TOTAL"
       currency(@stay.total_due || 0)
+    when "VALOR_TOTAL_EXTENSO", "TOTAL_EXTENSO"
+      currency_to_words(@stay.total_due || 0)
     when "VALOR_SINAL", "SINAL"
       currency(@stay.deposit_amount || 0)
+    when "VALOR_SINAL_EXTENSO", "SINAL_EXTENSO"
+      currency_to_words(@stay.deposit_amount || 0)
     when "VALOR_SALDO", "SALDO"
       currency(balance_due_value)
+    when "VALOR_SALDO_EXTENSO", "SALDO_EXTENSO"
+      currency_to_words(balance_due_value)
     when "DATA_VENCIMENTO_SALDO", "VENCIMENTO_SALDO"
       format_date(balance_due_date)
     when "OBSERVACOES", "OBSERVACOES_HOSPEDE"
@@ -304,5 +329,82 @@ class ContractTemplateProcessor
     return Date.current unless @stay.check_in_date
     days_before = ENV.fetch("CONTRACT_BALANCE_DAYS_BEFORE", 7).to_i
     (@stay.check_in_date - days_before.days).to_date
+  end
+
+  def number_to_words(number)
+    return "zero" if number.nil? || number.zero?
+
+    units = [ "", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove" ]
+    teens = [ "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove" ]
+    tens = [ "", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa" ]
+    hundreds = [ "", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos" ]
+
+    return units[number] if number < 10
+    return teens[number - 10] if number >= 10 && number < 20
+
+    if number < 100
+      ten = number / 10
+      unit = number % 10
+      return tens[ten] if unit.zero?
+      return "#{tens[ten]} e #{units[unit]}"
+    end
+
+    if number < 1000
+      hundred = number / 100
+      rest = number % 100
+      return "cem" if number == 100
+      return hundreds[hundred] if rest.zero?
+      return "#{hundreds[hundred]} e #{number_to_words(rest)}"
+    end
+
+    # Para números maiores
+    number.to_s
+  end
+
+  def currency_to_words(value)
+    return "zero reais" if value.nil? || value.zero?
+
+    reais = value.to_i
+    centavos = ((value - reais) * 100).round
+
+    result = []
+
+    # Processar reais
+    if reais > 0
+      if reais == 1
+        result << "um real"
+      elsif reais < 1000
+        result << "#{number_to_words(reais)} reais"
+      elsif reais < 1_000_000
+        milhares = reais / 1000
+        resto = reais % 1000
+
+        if milhares == 1
+          mil_text = "mil"
+        else
+          mil_text = "#{number_to_words(milhares)} mil"
+        end
+
+        if resto.zero?
+          result << "#{mil_text} reais"
+        else
+          result << "#{mil_text} e #{number_to_words(resto)} reais"
+        end
+      else
+        # Valores muito grandes, retornar formatado
+        return currency(value)
+      end
+    end
+
+    # Processar centavos
+    if centavos > 0
+      if centavos == 1
+        result << "um centavo"
+      else
+        result << "#{number_to_words(centavos)} centavos"
+      end
+    end
+
+    result.join(" e ")
   end
 end

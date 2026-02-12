@@ -122,7 +122,8 @@ class Api::V1::PublicPropertiesController < ApplicationController
         first_name: property.user.first_name,
         last_name: property.user.last_name,
         email: property.user.email,
-        phone: property.user.phone
+        phone: property.user.phone,
+        profile_image: property.user.profile_image.attached? ? url_for(property.user.profile_image) : nil
       } : nil,
       unavailable_dates: unavailable_dates
     }

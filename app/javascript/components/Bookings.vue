@@ -806,7 +806,11 @@ export default {
         })
       }
       return [...filtered].sort((a, b) => {
-        return new Date(a.check_in_date) - new Date(b.check_in_date)
+        const dateA = a.check_in_date.split('-').map(Number)
+        const dateB = b.check_in_date.split('-').map(Number)
+        const timeA = new Date(dateA[0], dateA[1] - 1, dateA[2]).getTime()
+        const timeB = new Date(dateB[0], dateB[1] - 1, dateB[2]).getTime()
+        return timeA - timeB
       })
     },
 
@@ -1023,11 +1027,11 @@ export default {
       const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
       
       return filtered.filter(booking => {
-        // Criar datas normalizadas (início do dia) para comparação
-        const checkIn = new Date(booking.check_in_date + 'T00:00:00')
-        const checkOut = new Date(booking.check_out_date + 'T00:00:00')
+        const [checkInY, checkInM, checkInD] = booking.check_in_date.split('-').map(Number)
+        const [checkOutY, checkOutM, checkOutD] = booking.check_out_date.split('-').map(Number)
+        const checkIn = new Date(checkInY, checkInM - 1, checkInD)
+        const checkOut = new Date(checkOutY, checkOutM - 1, checkOutD)
         
-        // Verificar se a data do calendário está dentro do período do booking
         return targetDate >= checkIn && targetDate <= checkOut
       })
     },
@@ -1125,7 +1129,8 @@ export default {
     },
 
     formatDate(dateString) {
-      const date = new Date(dateString + 'T00:00:00')
+      const [year, month, day] = dateString.split('-')
+      const date = new Date(year, month - 1, day)
       return date.toLocaleDateString('pt-BR')
     },
 

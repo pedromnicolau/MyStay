@@ -474,7 +474,8 @@ export default {
     },
 
     formatDate(dateString) {
-      const date = new Date(dateString + 'T00:00:00')
+      const [year, month, day] = dateString.split('-')
+      const date = new Date(year, month - 1, day)
       return date.toLocaleDateString('pt-BR')
     },
 

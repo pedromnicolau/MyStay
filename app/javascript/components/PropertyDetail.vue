@@ -251,10 +251,28 @@
           <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24 border-2 border-indigo-100">
             <h3 class="text-2xl font-bold text-gray-900 mb-6">Interessado?</h3>
             
-            <!-- User Host Name -->
-            <p v-if="property.user && property.user.first_name" class="text-gray-700 font-semibold mb-4">
-              Anfitrião: {{ hostFullName }}
-            </p>
+            <!-- Host Profile Section -->
+            <div v-if="property.user && property.user.first_name" class="flex items-center gap-3 mb-6 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
+              <!-- Profile Image or Initials Avatar -->
+              <div v-if="property.user.profile_image" class="flex-shrink-0">
+                <img 
+                  :src="property.user.profile_image" 
+                  :alt="hostFullName"
+                  class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+                />
+              </div>
+              <div v-else class="flex-shrink-0">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-white shadow-md">
+                  <span class="text-white font-bold text-lg">{{ hostInitials }}</span>
+                </div>
+              </div>
+              
+              <!-- Host Info -->
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-0.5">Anfitrião</p>
+                <p class="text-gray-900 font-bold text-base truncate">{{ hostFullName }}</p>
+              </div>
+            </div>
 
             <p class="text-gray-600 mb-6 text-sm">
               Entre em contato conosco para agendar uma visita ou obter mais informações sobre este imóvel.
@@ -490,6 +508,13 @@ export default {
       const first = this.property.user.first_name || ''
       const last = this.property.user.last_name || ''
       return `${first}${last ? ' ' + last : ''}`
+    },
+
+    hostInitials() {
+      if (!this.property || !this.property.user) return ''
+      const first = (this.property.user.first_name || '').charAt(0).toUpperCase()
+      const last = (this.property.user.last_name || '').charAt(0).toUpperCase()
+      return first + last || first || '?'
     }
   },
 
@@ -547,7 +572,9 @@ export default {
 
     formatDate(date) {
       if (!date) return ''
-      return new Date(date).toLocaleDateString('pt-BR', {
+      const [year, month, day] = date.split(/[-T]/).slice(0, 3).map(Number)
+      const d = new Date(year, month - 1, day)
+      return d.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
@@ -579,9 +606,12 @@ export default {
         return
       }
       
-      // Format dates for display
-      const checkInDate = new Date(dates.checkIn)
-      const checkOutDate = new Date(dates.checkOut)
+      // Format dates for display (using local timezone to avoid date shift)
+      const [checkInYear, checkInMonth, checkInDay] = dates.checkIn.split('-').map(Number)
+      const [checkOutYear, checkOutMonth, checkOutDay] = dates.checkOut.split('-').map(Number)
+      
+      const checkInDate = new Date(checkInYear, checkInMonth - 1, checkInDay)
+      const checkOutDate = new Date(checkOutYear, checkOutMonth - 1, checkOutDay)
       
       const formattedCheckIn = checkInDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
       const formattedCheckOut = checkOutDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
